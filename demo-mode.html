@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冲浪AI教练 - 演示模式</title>
+    <link rel="stylesheet" href="surfing-analyzer.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-water"></i>
+                <h1>冲浪AI教练 - 演示模式</h1>
+            </div>
+            <p class="subtitle">AI驱动的冲浪动作分析，实时标注优化建议（演示模式）</p>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 演示说明 -->
+            <div class="demo-notice" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+                <h3><i class="fas fa-info-circle"></i> 演示模式说明</h3>
+                <p>由于API配额限制，当前使用演示模式。所有分析数据都是预设的，但功能完全一致！</p>
+                <p><strong>要使用真实AI分析，请充值OpenAI账户后使用完整版本。</strong></p>
+            </div>
+
+            <!-- 视频上传区域 -->
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>上传冲浪视频</h3>
+                        <p>支持 MP4, MOV, AVI 格式，最大 200MB</p>
+                        <p class="upload-tip">演示模式将使用预设的AI分析数据</p>
+                        <button class="upload-btn" id="uploadBtn">选择视频文件</button>
+                        <input type="file" id="videoInput" accept="video/*" style="display: none;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视频预览区域 -->
+            <div class="video-section" id="videoSection" style="display: none;">
+                <h3>原始视频预览</h3>
+                <div class="video-container">
+                    <video id="videoPlayer" controls>
+                        您的浏览器不支持视频播放
+                    </video>
+                </div>
+                <div class="video-actions">
+                    <button class="analyze-btn" id="analyzeBtn">
+                        <i class="fas fa-brain"></i>
+                        开始演示分析
+                    </button>
+                    <button class="reset-btn" id="resetBtn">
+                        <i class="fas fa-redo"></i>
+                        重新上传
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI分析进度区域 -->
+            <div class="analysis-progress" id="analysisProgress" style="display: none;">
+                <h3>AI分析进度（演示模式）</h3>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">准备分析...</div>
+                </div>
+                <div class="analysis-steps">
+                    <div class="step active" id="step1">
+                        <i class="fas fa-eye"></i>
+                        <span>识别冲浪者</span>
+                    </div>
+                    <div class="step" id="step2">
+                        <i class="fas fa-route"></i>
+                        <span>分析动作轨迹</span>
+                    </div>
+                    <div class="step" id="step3">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>生成优化建议</span>
+                    </div>
+                    <div class="step" id="step4">
+                        <i class="fas fa-video"></i>
+                        <span>生成分析视频</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分析结果区域 -->
+            <div class="analysis-results" id="analysisResults" style="display: none;">
+                <h3>AI分析结果（演示数据）</h3>
+                
+                <!-- 分析摘要 -->
+                <div class="analysis-summary">
+                    <div class="summary-card">
+                        <h4>总体评分</h4>
+                        <div class="score">8.7<span>/10</span></div>
+                        <p class="score-description">表现优秀，技术娴熟</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>视频时长</h4>
+                        <div class="duration">2:45</div>
+                        <p class="duration-description">分析完成</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>关键动作</h4>
+                        <div class="actions-count">12</div>
+                        <p class="actions-description">个动作点</p>
+                    </div>
+                </div>
+
+                <!-- 动作分析列表 -->
+                <div class="actions-analysis">
+                    <h4>动作分析详情</h4>
+                    <div class="actions-timeline">
+                        <div class="action-item">
+                            <div class="action-time">0:15</div>
+                            <div class="action-content">
+                                <h5>起乘动作</h5>
+                                <p>时机把握准确，重心控制良好，建议继续保持</p>
+                                <div class="action-tags">
+                                    <span class="tag positive">优秀</span>
+                                    <span class="tag technique">起乘</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-item">
+                            <div class="action-time">0:28</div>
+                            <div class="action-content">
+                                <h5>转向时机</h5>
+                                <p>建议在浪峰处提前0.3秒开始转向，可以获得更好的动力和流畅性</p>
+                                <div class="action-tags">
+                                    <span class="tag warning">需改进</span>
+                                    <span class="tag technique">转向</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-item">
+                            <div class="action-time">0:42</div>
+                            <div class="action-content">
+                                <h5>回切动作</h5>
+                                <p>回切角度适中，但可以更激进一些，增加动作的观赏性</p>
+                                <div class="action-tags">
+                                    <span class="tag improvement">可优化</span>
+                                    <span class="tag technique">回切</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-item">
+                            <div class="action-time">1:05</div>
+                            <div class="action-content">
+                                <h5>重心控制</h5>
+                                <p>在高速滑行时重心控制稳定，表现优秀</p>
+                                <div class="action-tags">
+                                    <span class="tag positive">优秀</span>
+                                    <span class="tag technique">平衡</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-item">
+                            <div class="action-time">1:18</div>
+                            <div class="action-content">
+                                <h5>手臂位置</h5>
+                                <p>保持手臂在身体两侧，有助于更好的平衡控制</p>
+                                <div class="action-tags">
+                                    <span class="tag improvement">可优化</span>
+                                    <span class="tag technique">姿态</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-item">
+                            <div class="action-time">1:32</div>
+                            <div class="action-content">
+                                <h5>速度控制</h5>
+                                <p>在浪峰处加速时机把握准确，建议继续保持</p>
+                                <div class="action-tags">
+                                    <span class="tag positive">优秀</span>
+                                    <span class="tag technique">速度</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-item">
+                            <div class="action-time">1:45</div>
+                            <div class="action-content">
+                                <h5>回切时机</h5>
+                                <p>回切动作时机稍晚，建议提前0.2秒开始回切</p>
+                                <div class="action-tags">
+                                    <span class="tag warning">需改进</span>
+                                    <span class="tag technique">回切</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-item">
+                            <div class="action-time">2:01</div>
+                            <div class="action-content">
+                                <h5>平衡调整</h5>
+                                <p>在转向过程中平衡控制良好，重心转移自然</p>
+                                <div class="action-tags">
+                                    <span class="tag positive">优秀</span>
+                                    <span class="tag technique">平衡</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分析视频播放区域 -->
+                <div class="analyzed-video-section">
+                    <h4>AI分析视频（带标注）</h4>
+                    <div class="video-container">
+                        <div class="video-wrapper">
+                            <video id="analyzedVideo" controls>
+                                您的浏览器不支持视频播放
+                            </video>
+                            <div class="video-overlay" id="videoOverlay">
+                                <!-- AI分析的标注将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="video-controls">
+                        <button class="download-btn" id="downloadBtn">
+                            <i class="fas fa-download"></i>
+                            下载分析视频
+                        </button>
+                        <button class="share-btn" id="shareBtn">
+                            <i class="fas fa-share"></i>
+                            分享结果
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 技术评分详情 -->
+                <div class="technical-score">
+                    <h4>技术评分详情</h4>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <div class="score-label">平衡控制</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 85%"></div>
+                            </div>
+                            <div class="score-value">8.5/10</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">时机把握</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 78%"></div>
+                            </div>
+                            <div class="score-value">7.8/10</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">动作流畅度</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 82%"></div>
+                            </div>
+                            <div class="score-value">8.2/10</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">速度控制</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 80%"></div>
+                            </div>
+                            <div class="score-value">8.0/10</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 改进建议 -->
+                <div class="improvement-suggestions">
+                    <h4>改进建议</h4>
+                    <div class="suggestions-list">
+                        <div class="suggestion-item">
+                            <i class="fas fa-lightbulb"></i>
+                            <div class="suggestion-content">
+                                <h5>转向时机优化</h5>
+                                <p>建议在浪峰处提前0.3秒开始转向，可以获得更好的动力和流畅性</p>
+                            </div>
+                        </div>
+                        <div class="suggestion-item">
+                            <i class="fas fa-lightbulb"></i>
+                            <div class="suggestion-content">
+                                <h5>回切动作加强</h5>
+                                <p>回切角度可以更激进一些，增加动作的观赏性和技术难度</p>
+                            </div>
+                        </div>
+                        <div class="suggestion-item">
+                            <i class="fas fa-lightbulb"></i>
+                            <div class="suggestion-content">
+                                <h5>手臂位置调整</h5>
+                                <p>保持手臂在身体两侧，有助于更好的平衡控制和动作稳定性</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部信息 -->
+        <footer class="footer">
+            <p>&copy; 2024 冲浪AI教练. 让AI助你成为更好的冲浪者</p>
+        </footer>
+    </div>
+
+    <script>
+        // 演示版冲浪AI分析器
+        class DemoSurfingAnalyzer {
+            constructor() {
+                this.videoFile = null;
+                this.videoPlayer = null;
+                this.analyzedVideo = null;
+                this.currentAnnotations = [];
+                this.init();
+            }
+
+            init() {
+                this.cacheElements();
+                this.bindEvents();
+                this.setupDragAndDrop();
+            }
+
+            cacheElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.uploadBtn = document.getElementById('uploadBtn');
+                this.videoSection = document.getElementById('videoSection');
+                this.analysisProgress = document.getElementById('analysisProgress');
+                this.analysisResults = document.getElementById('analysisResults');
+                this.analyzeBtn = document.getElementById('analyzeBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.videoPlayer = document.getElementById('videoPlayer');
+                this.analyzedVideo = document.getElementById('analyzedVideo');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+            }
+
+            bindEvents() {
+                this.uploadBtn.addEventListener('click', () => {
+                    document.getElementById('videoInput').click();
+                });
+
+                document.getElementById('videoInput').addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0]);
+                });
+
+                this.analyzeBtn.addEventListener('click', () => {
+                    this.startAnalysis();
+                });
+
+                this.resetBtn.addEventListener('click', () => {
+                    this.resetApp();
+                });
+
+                document.getElementById('downloadBtn').addEventListener('click', () => {
+                    this.downloadAnalyzedVideo();
+                });
+
+                document.getElementById('shareBtn').addEventListener('click', () => {
+                    this.shareResults();
+                });
+            }
+
+            setupDragAndDrop() {
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+
+                this.uploadArea.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                });
+
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.handleFileSelect(files[0]);
+                    }
+                });
+            }
+
+            handleFileSelect(file) {
+                if (!file) return;
+
+                if (!file.type.startsWith('video/')) {
+                    this.showNotification('请选择有效的视频文件', 'error');
+                    return;
+                }
+
+                if (file.size > 200 * 1024 * 1024) {
+                    this.showNotification('文件大小不能超过200MB', 'error');
+                    return;
+                }
+
+                this.videoFile = file;
+                this.displayVideo(file);
+                this.showVideoSection();
+            }
+
+            displayVideo(file) {
+                const url = URL.createObjectURL(file);
+                this.videoPlayer.src = url;
+                this.videoPlayer.load();
+            }
+
+            showVideoSection() {
+                this.uploadArea.style.display = 'none';
+                this.videoSection.style.display = 'block';
+                this.videoSection.classList.add('fade-in');
+            }
+
+            async startAnalysis() {
+                if (!this.videoFile) {
+                    this.showNotification('请先上传视频文件', 'warning');
+                    return;
+                }
+
+                this.analysisProgress.style.display = 'block';
+                this.analysisProgress.classList.add('fade-in');
+                this.videoSection.style.display = 'none';
+                
+                await this.runDemoAnalysis();
+            }
+
+            async runDemoAnalysis() {
+                try {
+                    // 步骤1: 识别冲浪者
+                    await this.updateProgress(25, '正在识别冲浪者...');
+                    await this.activateStep(1);
+                    await this.delay(1000);
+
+                    // 步骤2: 分析动作轨迹
+                    await this.updateProgress(50, '正在分析动作轨迹...');
+                    await this.activateStep(2);
+                    await this.delay(1500);
+
+                    // 步骤3: 生成优化建议
+                    await this.updateProgress(75, '正在生成优化建议...');
+                    await this.activateStep(3);
+                    await this.delay(1000);
+
+                    // 步骤4: 生成分析视频
+                    await this.updateProgress(90, '正在生成分析视频...');
+                    await this.activateStep(4);
+                    await this.delay(1000);
+
+                    // 完成分析
+                    await this.updateProgress(100, '分析完成！');
+                    await this.delay(500);
+
+                    this.showAnalysisResults();
+
+                } catch (error) {
+                    console.error('分析过程中出错:', error);
+                    this.showNotification('分析过程中出现错误，请重试', 'error');
+                }
+            }
+
+            async updateProgress(percentage, text) {
+                this.progressFill.style.width = percentage + '%';
+                this.progressText.textContent = text;
+            }
+
+            async activateStep(stepNumber) {
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`step${i}`).classList.remove('active');
+                }
+                document.getElementById(`step${stepNumber}`).classList.add('active');
+            }
+
+            async delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            showAnalysisResults() {
+                this.analysisProgress.style.display = 'none';
+                this.analysisResults.style.display = 'block';
+                this.analysisResults.classList.add('fade-in');
+                
+                this.setupAnnotatedVideoPlayer();
+                this.generateDemoAnnotations();
+            }
+
+            setupAnnotatedVideoPlayer() {
+                if (this.videoPlayer.src) {
+                    this.analyzedVideo.src = this.videoPlayer.src;
+                    this.analyzedVideo.load();
+                    
+                    this.analyzedVideo.addEventListener('timeupdate', () => {
+                        this.drawCurrentAnnotations();
+                    });
+                }
+            }
+
+            generateDemoAnnotations() {
+                // 生成演示用的标注数据
+                this.currentAnnotations = [
+                    {
+                        type: 'line',
+                        position: { x: 20, y: 20 },
+                        style: 'speed-line',
+                        text: '速度区间 Speed Line',
+                        description: '在顶端速度是最快的,中部相对较弱,底部是最慢的。',
+                        timestamp: 0,
+                        duration: 10
+                    },
+                    {
+                        type: 'arrow',
+                        position: { x: 50, y: 50 },
+                        style: 'action-arrow',
+                        text: '回切动作',
+                        description: '建议在浪峰处提前0.3秒开始转向',
+                        timestamp: 15,
+                        duration: 5
+                    },
+                    {
+                        type: 'circle',
+                        position: { x: 60, y: 40 },
+                        style: 'balance-circle',
+                        text: '重心调整',
+                        description: '建议调整重心位置以获得更好的平衡',
+                        timestamp: 28,
+                        duration: 8
+                    },
+                    {
+                        type: 'text',
+                        position: { x: 70, y: 60 },
+                        style: 'instruction-text',
+                        text: '双手撑直',
+                        description: '保持手臂在身体两侧',
+                        timestamp: 42,
+                        duration: 6
+                    },
+                    {
+                        type: 'arrow',
+                        position: { x: 30, y: 70 },
+                        style: 'action-arrow',
+                        text: '加速时机',
+                        description: '在浪峰处开始加速，利用重力势能',
+                        timestamp: 65,
+                        duration: 7
+                    },
+                    {
+                        type: 'circle',
+                        position: { x: 80, y: 30 },
+                        style: 'balance-circle',
+                        text: '平衡控制',
+                        description: '重心控制稳定，表现优秀',
+                        timestamp: 78,
+                        duration: 5
+                    },
+                    {
+                        type: 'line',
+                        position: { x: 40, y: 50 },
+                        style: 'action-line',
+                        text: '动作轨迹',
+                        description: '回切动作轨迹分析',
+                        timestamp: 105,
+                        duration: 8
+                    },
+                    {
+                        type: 'text',
+                        position: { x: 60, y: 80 },
+                        style: 'instruction-text',
+                        text: '放到前脚上面',
+                        description: '重心前移，提高速度',
+                        timestamp: 132,
+                        duration: 6
+                    }
+                ];
+            }
+
+            drawCurrentAnnotations() {
+                const currentTime = this.analyzedVideo.currentTime;
+                const overlay = document.getElementById('videoOverlay');
+                
+                if (!overlay) return;
+                
+                overlay.innerHTML = '';
+                
+                const currentAnnotations = this.getAnnotationsAtTime(currentTime);
+                
+                currentAnnotations.forEach(annotation => {
+                    this.drawAnnotation(annotation, overlay);
+                });
+            }
+
+            getAnnotationsAtTime(time) {
+                return this.currentAnnotations.filter(annotation => {
+                    return time >= annotation.timestamp && time <= annotation.timestamp + annotation.duration;
+                });
+            }
+
+            drawAnnotation(annotation, container) {
+                const { type, position, style, text, description } = annotation;
+                
+                const annotationElement = document.createElement('div');
+                annotationElement.className = `annotation ${type} ${style}`;
+                annotationElement.style.cssText = `
+                    position: absolute;
+                    left: ${position.x}%;
+                    top: ${position.y}%;
+                    pointer-events: none;
+                    z-index: 10;
+                `;
+                
+                switch (type) {
+                    case 'line':
+                        annotationElement.innerHTML = this.createLineAnnotation(text, style);
+                        break;
+                    case 'text':
+                        annotationElement.innerHTML = this.createTextAnnotation(text, description);
+                        break;
+                    case 'arrow':
+                        annotationElement.innerHTML = this.createArrowAnnotation(text, style);
+                        break;
+                    case 'circle':
+                        annotationElement.innerHTML = this.createCircleAnnotation(text, description);
+                        break;
+                }
+                
+                container.appendChild(annotationElement);
+            }
+
+            createLineAnnotation(text, style) {
+                const lineClass = style === 'speed-line' ? 'speed-line' : 'action-line';
+                return `
+                    <div class="annotation-line ${lineClass}">
+                        <div class="line-text">${text}</div>
+                    </div>
+                `;
+            }
+
+            createTextAnnotation(text, description) {
+                return `
+                    <div class="annotation-text">
+                        <div class="text-main">${text}</div>
+                        ${description ? `<div class="text-description">${description}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            createArrowAnnotation(text, style) {
+                return `
+                    <div class="annotation-arrow ${style}">
+                        <div class="arrow-line"></div>
+                        <div class="arrow-head"></div>
+                        <div class="arrow-text">${text}</div>
+                    </div>
+                `;
+            }
+
+            createCircleAnnotation(text, description) {
+                return `
+                    <div class="annotation-circle">
+                        <div class="circle-outline"></div>
+                        <div class="circle-text">${text}</div>
+                        ${description ? `<div class="circle-description">${description}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            downloadAnalyzedVideo() {
+                this.showNotification('演示模式：下载功能需要完整版本', 'info');
+            }
+
+            shareResults() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: '我的冲浪AI分析报告（演示版）',
+                        text: '看看AI教练给我的冲浪建议！',
+                        url: window.location.href
+                    });
+                } else {
+                    navigator.clipboard.writeText(window.location.href).then(() => {
+                        this.showNotification('链接已复制到剪贴板', 'success');
+                    });
+                }
+            }
+
+            resetApp() {
+                this.videoFile = null;
+                this.videoPlayer.src = '';
+                this.analyzedVideo.src = '';
+                
+                this.videoSection.style.display = 'none';
+                this.analysisProgress.style.display = 'none';
+                this.analysisResults.style.display = 'none';
+                
+                this.uploadArea.style.display = 'block';
+                
+                document.getElementById('videoInput').value = '';
+                
+                this.progressFill.style.width = '0%';
+                this.progressText.textContent = '准备分析...';
+                
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`step${i}`).classList.remove('active');
+                }
+                document.getElementById('step1').classList.add('active');
+                
+                this.videoSection.classList.remove('fade-in');
+                this.analysisProgress.classList.remove('fade-in');
+                this.analysisResults.classList.remove('fade-in');
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <i class="fas fa-${this.getNotificationIcon(type)}"></i>
+                    <span>${message}</span>
+                `;
+                
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${this.getNotificationColor(type)};
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    animation: slideIn 0.3s ease-out;
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+
+            getNotificationIcon(type) {
+                switch (type) {
+                    case 'success': return 'check-circle';
+                    case 'error': return 'exclamation-circle';
+                    case 'warning': return 'exclamation-triangle';
+                    default: return 'info-circle';
+                }
+            }
+
+            getNotificationColor(type) {
+                switch (type) {
+                    case 'success': return 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    case 'error': return 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                    case 'warning': return 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)';
+                    case 'info': return 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)';
+                }
+            }
+        }
+
+        // 添加通知动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            
+            .technical-score {
+                margin: 40px 0;
+            }
+            
+            .technical-score h4 {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+                color: #333;
+                text-align: center;
+            }
+            
+            .score-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+            }
+            
+            .score-item {
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                text-align: center;
+            }
+            
+            .score-label {
+                font-weight: 600;
+                margin-bottom: 10px;
+                color: #333;
+            }
+            
+            .score-bar {
+                width: 100%;
+                height: 10px;
+                background: #e9ecef;
+                border-radius: 5px;
+                overflow: hidden;
+                margin-bottom: 10px;
+            }
+            
+            .score-fill {
+                height: 100%;
+                background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+                transition: width 0.5s ease;
+            }
+            
+            .score-value {
+                font-weight: 700;
+                color: #333;
+                font-size: 1.2rem;
+            }
+            
+            .improvement-suggestions {
+                margin: 40px 0;
+            }
+            
+            .improvement-suggestions h4 {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+                color: #333;
+                text-align: center;
+            }
+            
+            .suggestions-list {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .suggestion-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 15px;
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                border-left: 4px solid #00d4ff;
+            }
+            
+            .suggestion-item i {
+                color: #00d4ff;
+                font-size: 1.5rem;
+                margin-top: 5px;
+            }
+            
+            .suggestion-content h5 {
+                margin: 0 0 8px 0;
+                color: #333;
+                font-size: 1.1rem;
+            }
+            
+            .suggestion-content p {
+                margin: 0;
+                color: #666;
+                line-height: 1.5;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 页面加载完成后初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            new DemoSurfingAnalyzer();
+        });
+    </script>
+</body>
+</html>

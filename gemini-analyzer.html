@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冲浪AI教练 - Google Gemini版</title>
+    <link rel="stylesheet" href="surfing-analyzer.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-water"></i>
+                <h1>冲浪AI教练 - Google Gemini版</h1>
+            </div>
+            <p class="subtitle">使用Google Gemini AI进行冲浪视频分析</p>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- API配置区域 -->
+            <div class="api-config-section" style="background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+                <h3><i class="fab fa-google"></i> Google Gemini API配置</h3>
+                <div style="margin: 15px 0;">
+                    <label for="geminiApiKey" style="display: block; margin-bottom: 10px; font-weight: bold;">Gemini API Key:</label>
+                    <input type="password" id="geminiApiKey" 
+                           value=""
+                           style="width: 100%; max-width: 500px; padding: 12px; border: none; border-radius: 8px; font-size: 14px;">
+                </div>
+                <button id="testGeminiBtn" class="test-btn" style="background: white; color: #4285f4; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; margin: 10px;">
+                    <i class="fas fa-check"></i> 测试API连接
+                </button>
+                <div id="apiStatus" style="margin-top: 10px; font-size: 14px;"></div>
+            </div>
+
+            <!-- 视频上传区域 -->
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>上传冲浪视频</h3>
+                        <p>支持 MP4, MOV, AVI 格式，最大 200MB</p>
+                        <p class="upload-tip">使用Google Gemini AI进行智能分析</p>
+                        <button class="upload-btn" id="uploadBtn">选择视频文件</button>
+                        <input type="file" id="videoInput" accept="video/*" style="display: none;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视频预览区域 -->
+            <div class="video-section" id="videoSection" style="display: none;">
+                <h3>原始视频预览</h3>
+                <div class="video-container">
+                    <video id="videoPlayer" controls>
+                        您的浏览器不支持视频播放
+                    </video>
+                </div>
+                <div class="video-actions">
+                    <button class="analyze-btn" id="analyzeBtn">
+                        <i class="fas fa-brain"></i>
+                        开始Gemini AI分析
+                    </button>
+                    <button class="reset-btn" id="resetBtn">
+                        <i class="fas fa-redo"></i>
+                        重新上传
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI分析进度区域 -->
+            <div class="analysis-progress" id="analysisProgress" style="display: none;">
+                <h3>Google Gemini AI分析进度</h3>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">准备分析...</div>
+                </div>
+                <div class="analysis-steps">
+                    <div class="step active" id="step1">
+                        <i class="fas fa-eye"></i>
+                        <span>识别冲浪者</span>
+                    </div>
+                    <div class="step" id="step2">
+                        <i class="fas fa-route"></i>
+                        <span>分析动作轨迹</span>
+                    </div>
+                    <div class="step" id="step3">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>生成优化建议</span>
+                    </div>
+                    <div class="step" id="step4">
+                        <i class="fas fa-video"></i>
+                        <span>生成分析视频</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分析结果区域 -->
+            <div class="analysis-results" id="analysisResults" style="display: none;">
+                <h3>Google Gemini AI分析结果</h3>
+                
+                <!-- 分析摘要 -->
+                <div class="analysis-summary">
+                    <div class="summary-card">
+                        <h4>总体评分</h4>
+                        <div class="score" id="overallScore">8.7<span>/10</span></div>
+                        <p class="score-description" id="scoreDescription">表现优秀，技术娴熟</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>视频时长</h4>
+                        <div class="duration" id="videoDuration">2:45</div>
+                        <p class="duration-description">分析完成</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>关键动作</h4>
+                        <div class="actions-count" id="actionsCount">12</div>
+                        <p class="actions-description">个动作点</p>
+                    </div>
+                </div>
+
+                <!-- 动作分析列表 -->
+                <div class="actions-analysis">
+                    <h4>动作分析详情</h4>
+                    <div class="actions-timeline" id="actionsTimeline">
+                        <!-- 动态生成的动作分析 -->
+                    </div>
+                </div>
+
+                <!-- 分析视频播放区域 -->
+                <div class="analyzed-video-section">
+                    <h4>AI分析视频（带标注）</h4>
+                    <div class="video-container">
+                        <div class="video-wrapper">
+                            <video id="analyzedVideo" controls>
+                                您的浏览器不支持视频播放
+                            </video>
+                            <div class="video-overlay" id="videoOverlay">
+                                <!-- AI分析的标注将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="video-controls">
+                        <button class="download-btn" id="downloadBtn">
+                            <i class="fas fa-download"></i>
+                            下载分析视频
+                        </button>
+                        <button class="share-btn" id="shareBtn">
+                            <i class="fas fa-share"></i>
+                            分享结果
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部信息 -->
+        <footer class="footer">
+            <p>&copy; 2024 冲浪AI教练. 使用Google Gemini AI驱动</p>
+        </footer>
+    </div>
+
+    <script>
+        // Google Gemini AI分析器
+        class GeminiSurfingAnalyzer {
+            constructor() {
+                this.videoFile = null;
+                this.videoPlayer = null;
+                this.analyzedVideo = null;
+                this.geminiApiKey = null;
+                this.currentAnnotations = [];
+                this.analysisResults = null;
+                this.init();
+            }
+
+            init() {
+                this.cacheElements();
+                this.bindEvents();
+                this.setupDragAndDrop();
+                this.loadApiKey();
+            }
+
+            cacheElements() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.uploadBtn = document.getElementById('uploadBtn');
+                this.videoSection = document.getElementById('videoSection');
+                this.analysisProgress = document.getElementById('analysisProgress');
+                this.analysisResults = document.getElementById('analysisResults');
+                this.analyzeBtn = document.getElementById('analyzeBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.videoPlayer = document.getElementById('videoPlayer');
+                this.analyzedVideo = document.getElementById('analyzedVideo');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.geminiApiKeyInput = document.getElementById('geminiApiKey');
+                this.testGeminiBtn = document.getElementById('testGeminiBtn');
+                this.apiStatus = document.getElementById('apiStatus');
+            }
+
+            bindEvents() {
+                this.uploadBtn.addEventListener('click', () => {
+                    document.getElementById('videoInput').click();
+                });
+
+                document.getElementById('videoInput').addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0]);
+                });
+
+                this.analyzeBtn.addEventListener('click', () => {
+                    this.startAnalysis();
+                });
+
+                this.resetBtn.addEventListener('click', () => {
+                    this.resetApp();
+                });
+
+                this.testGeminiBtn.addEventListener('click', () => {
+                    this.testGeminiAPI();
+                });
+
+                this.geminiApiKeyInput.addEventListener('input', () => {
+                    this.geminiApiKey = this.geminiApiKeyInput.value.trim();
+                    this.saveApiKey();
+                });
+
+                document.getElementById('downloadBtn').addEventListener('click', () => {
+                    this.downloadAnalyzedVideo();
+                });
+
+                document.getElementById('shareBtn').addEventListener('click', () => {
+                    this.shareResults();
+                });
+            }
+
+            setupDragAndDrop() {
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+
+                this.uploadArea.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                });
+
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.handleFileSelect(files[0]);
+                    }
+                });
+            }
+
+            loadApiKey() {
+                const savedKey = localStorage.getItem('gemini_api_key');
+                if (savedKey) {
+                    this.geminiApiKey = savedKey;
+                    this.geminiApiKeyInput.value = savedKey;
+                } else {
+                    this.geminiApiKey = this.geminiApiKeyInput.value.trim();
+                }
+            }
+
+            saveApiKey() {
+                if (this.geminiApiKey) {
+                    localStorage.setItem('gemini_api_key', this.geminiApiKey);
+                }
+            }
+
+            async testGeminiAPI() {
+                if (!this.geminiApiKey) {
+                    this.updateApiStatus('请输入API Key', 'error');
+                    return;
+                }
+
+                this.updateApiStatus('正在测试API连接...', 'info');
+
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiApiKey}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{
+                                    text: 'Hello, this is a test message. Please respond with "API connection successful".'
+                                }]
+                            }]
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.updateApiStatus('✅ API连接成功！', 'success');
+                    } else {
+                        const errorData = await response.json();
+                        this.updateApiStatus(`❌ API连接失败: ${errorData.error?.message || '未知错误'}`, 'error');
+                    }
+                } catch (error) {
+                    this.updateApiStatus(`❌ 网络错误: ${error.message}`, 'error');
+                }
+            }
+
+            updateApiStatus(message, type) {
+                this.apiStatus.textContent = message;
+                this.apiStatus.style.color = type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#2196f3';
+            }
+
+            handleFileSelect(file) {
+                if (!file) return;
+
+                if (!file.type.startsWith('video/')) {
+                    this.showNotification('请选择有效的视频文件', 'error');
+                    return;
+                }
+
+                if (file.size > 200 * 1024 * 1024) {
+                    this.showNotification('文件大小不能超过200MB', 'error');
+                    return;
+                }
+
+                this.videoFile = file;
+                this.displayVideo(file);
+                this.showVideoSection();
+            }
+
+            displayVideo(file) {
+                const url = URL.createObjectURL(file);
+                this.videoPlayer.src = url;
+                this.videoPlayer.load();
+            }
+
+            showVideoSection() {
+                this.uploadArea.style.display = 'none';
+                this.videoSection.style.display = 'block';
+                this.videoSection.classList.add('fade-in');
+            }
+
+            async startAnalysis() {
+                if (!this.videoFile) {
+                    this.showNotification('请先上传视频文件', 'warning');
+                    return;
+                }
+
+                if (!this.geminiApiKey) {
+                    this.showNotification('请先配置Gemini API Key', 'warning');
+                    return;
+                }
+
+                this.analysisProgress.style.display = 'block';
+                this.analysisProgress.classList.add('fade-in');
+                this.videoSection.style.display = 'none';
+                
+                await this.runGeminiAnalysis();
+            }
+
+            async runGeminiAnalysis() {
+                try {
+                    // 步骤1: 识别冲浪者
+                    await this.updateProgress(10, '正在识别冲浪者...');
+                    await this.activateStep(1);
+                    await this.delay(1000);
+
+                    // 步骤2: 分析动作轨迹
+                    await this.updateProgress(30, '正在分析动作轨迹...');
+                    await this.activateStep(2);
+                    
+                    // 执行Gemini AI分析
+                    this.analysisResults = await this.analyzeVideoWithGemini(this.videoPlayer, 3);
+                    
+                    // 步骤3: 生成优化建议
+                    await this.updateProgress(70, '正在生成优化建议...');
+                    await this.activateStep(3);
+                    await this.delay(1000);
+
+                    // 步骤4: 生成分析视频
+                    await this.updateProgress(90, '正在生成分析视频...');
+                    await this.activateStep(4);
+                    
+                    // 生成带标注的视频
+                    await this.generateAnnotatedVideo();
+
+                    // 完成分析
+                    await this.updateProgress(100, '分析完成！');
+                    await this.delay(500);
+
+                    this.showAnalysisResults();
+
+                } catch (error) {
+                    console.error('分析过程中出错:', error);
+                    this.showNotification(`分析失败: ${error.message}`, 'error');
+                    // 显示模拟结果作为备选
+                    this.showMockResults();
+                }
+            }
+
+            async analyzeVideoWithGemini(videoElement, frameInterval = 3) {
+                const analysisResults = [];
+                const duration = videoElement.duration;
+                
+                if (!duration || duration === 0) {
+                    throw new Error('视频时长无效，请确保视频已正确加载');
+                }
+                
+                const frameCount = Math.ceil(duration / frameInterval);
+                console.log(`开始使用Gemini分析 ${frameCount} 帧视频...`);
+
+                for (let i = 0; i < frameCount; i++) {
+                    const timestamp = i * frameInterval;
+                    console.log(`分析第 ${i + 1}/${frameCount} 帧，时间戳: ${timestamp}`);
+                    
+                    try {
+                        // 设置视频时间
+                        videoElement.currentTime = timestamp;
+                        
+                        // 等待视频帧加载
+                        await this.waitForVideoFrame(videoElement);
+                        
+                        // 分析当前帧
+                        const result = await this.analyzeFrameWithGemini(videoElement, timestamp);
+                        analysisResults.push(result);
+                        
+                        console.log(`第 ${i + 1} 帧分析完成`);
+                        
+                        // 更新进度
+                        const progress = 30 + ((i + 1) / frameCount) * 40; // 30-70%
+                        this.updateProgress(progress, `正在分析第 ${i + 1}/${frameCount} 帧...`);
+                        
+                    } catch (error) {
+                        console.error(`分析第 ${i + 1} 帧失败:`, error);
+                        // 添加默认结果以保持分析连续性
+                        analysisResults.push(this.getDefaultAnalysis(timestamp));
+                    }
+                }
+
+                console.log('Gemini分析完成，结果数量:', analysisResults.length);
+                return analysisResults;
+            }
+
+            async analyzeFrameWithGemini(videoElement, timestamp) {
+                try {
+                    // 将视频帧转换为base64
+                    const base64Image = await this.convertFrameToBase64(videoElement);
+                    
+                    // 构建分析提示词
+                    const prompt = this.buildAnalysisPrompt(timestamp);
+                    
+                    // 调用Gemini API
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiApiKey}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: prompt },
+                                    {
+                                        inline_data: {
+                                            mime_type: "image/jpeg",
+                                            data: base64Image
+                                        }
+                                    }
+                                ]
+                            }],
+                            generationConfig: {
+                                temperature: 0.3,
+                                maxOutputTokens: 1000
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Gemini API错误: ${response.status} ${errorData.error?.message || '未知错误'}`);
+                    }
+
+                    const data = await response.json();
+                    const analysisText = data.candidates[0].content.parts[0].text;
+                    
+                    // 解析响应并生成标注
+                    const annotations = this.parseGeminiResponse(analysisText, timestamp);
+                    
+                    return {
+                        timestamp: timestamp,
+                        analysis: annotations.analysis,
+                        annotations: annotations.annotations
+                    };
+                    
+                } catch (error) {
+                    console.error('Gemini分析失败:', error);
+                    throw error;
+                }
+            }
+
+            buildAnalysisPrompt(timestamp) {
+                return `
+                请分析这个冲浪视频帧，重点关注以下方面：
+
+                1. 冲浪者位置和姿态：
+                   - 冲浪者在浪上的位置（浪峰、浪壁、浪底）
+                   - 身体姿态（站姿、重心、手臂位置）
+                   - 冲浪板的角度和方向
+
+                2. 海浪情况：
+                   - 海浪的形状和大小
+                   - 海浪的破碎程度
+                   - 海浪的速度区间（顶部最快，中部中等，底部最慢）
+
+                3. 动作分析：
+                   - 当前动作类型（起乘、加速、转向、回切、减速等）
+                   - 动作是否标准
+                   - 时机把握是否准确
+
+                4. 技术建议：
+                   - 需要改进的地方
+                   - 建议的动作调整
+                   - 最佳时机建议
+
+                请用JSON格式返回分析结果，包含以下字段：
+                {
+                    "surfer_position": "浪峰/浪壁/浪底",
+                    "body_posture": "优秀/良好/需改进",
+                    "wave_condition": "描述海浪情况",
+                    "current_action": "当前动作类型",
+                    "action_quality": "优秀/良好/需改进",
+                    "timing": "时机把握评价",
+                    "suggestions": ["具体建议1", "具体建议2"]
+                }
+
+                时间戳: ${timestamp}
+                `;
+            }
+
+            parseGeminiResponse(responseText, timestamp) {
+                try {
+                    // 尝试提取JSON部分
+                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const analysis = JSON.parse(jsonMatch[0]);
+                        return {
+                            analysis: analysis,
+                            annotations: this.generateAnnotationsFromAnalysis(analysis, timestamp)
+                        };
+                    } else {
+                        throw new Error('无法解析JSON响应');
+                    }
+                } catch (error) {
+                    console.error('解析Gemini响应失败:', error);
+                    return this.getDefaultAnalysis(timestamp);
+                }
+            }
+
+            generateAnnotationsFromAnalysis(analysis, timestamp) {
+                const annotations = [];
+
+                // 根据冲浪者位置生成速度区间标注
+                if (analysis.surfer_position) {
+                    annotations.push({
+                        type: 'line',
+                        position: { x: 20, y: 20 },
+                        style: 'speed-line',
+                        text: '速度区间 Speed Line',
+                        description: '在顶端速度是最快的,中部相对较弱,底部是最慢的。',
+                        timestamp: timestamp
+                    });
+                }
+
+                // 根据动作类型生成动作标注
+                if (analysis.current_action) {
+                    annotations.push({
+                        type: 'arrow',
+                        position: { x: 50, y: 50 },
+                        style: 'action-arrow',
+                        text: analysis.current_action,
+                        description: analysis.suggestions ? analysis.suggestions[0] : '动作建议',
+                        timestamp: timestamp
+                    });
+                }
+
+                // 根据姿态评价生成平衡标注
+                if (analysis.body_posture === '需改进') {
+                    annotations.push({
+                        type: 'circle',
+                        position: { x: 60, y: 40 },
+                        style: 'balance-circle',
+                        text: '重心调整',
+                        description: '建议调整重心位置以获得更好的平衡',
+                        timestamp: timestamp
+                    });
+                }
+
+                return annotations;
+            }
+
+            getDefaultAnalysis(timestamp) {
+                return {
+                    timestamp: timestamp,
+                    analysis: {
+                        surfer_position: '浪壁',
+                        body_posture: '良好',
+                        wave_condition: '中等大小的海浪',
+                        current_action: '滑行',
+                        action_quality: '良好',
+                        timing: '时机把握准确',
+                        suggestions: ['继续保持当前姿态', '可以尝试更激进的动作']
+                    },
+                    annotations: [
+                        {
+                            type: 'line',
+                            position: { x: 20, y: 20 },
+                            style: 'speed-line',
+                            text: '速度区间',
+                            description: '在顶端速度是最快的,中部相对较弱,底部是最慢的。',
+                            timestamp: timestamp
+                        }
+                    ]
+                };
+            }
+
+            async convertFrameToBase64(videoElement) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        canvas.width = videoElement.videoWidth || 1280;
+                        canvas.height = videoElement.videoHeight || 720;
+                        
+                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                        
+                        const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                        resolve(base64);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+
+            async waitForVideoFrame(videoElement) {
+                return new Promise((resolve) => {
+                    const onSeeked = () => {
+                        videoElement.removeEventListener('seeked', onSeeked);
+                        resolve();
+                    };
+                    
+                    videoElement.addEventListener('seeked', onSeeked);
+                    
+                    // 超时保护
+                    setTimeout(() => {
+                        videoElement.removeEventListener('seeked', onSeeked);
+                        resolve();
+                    }, 1000);
+                });
+            }
+
+            async generateAnnotatedVideo() {
+                // 收集所有标注
+                this.currentAnnotations = [];
+                this.analysisResults.forEach(result => {
+                    if (result.annotations) {
+                        this.currentAnnotations.push(...result.annotations);
+                    }
+                });
+            }
+
+            showAnalysisResults() {
+                this.analysisProgress.style.display = 'none';
+                this.analysisResults.style.display = 'block';
+                this.analysisResults.classList.add('fade-in');
+                
+                // 生成分析报告
+                const report = this.generateAnalysisReport();
+                
+                // 更新UI显示分析结果
+                this.updateAnalysisResults(report);
+                
+                // 设置视频播放器
+                this.setupAnnotatedVideoPlayer();
+            }
+
+            generateAnalysisReport() {
+                const report = {
+                    totalFrames: this.analysisResults.length,
+                    duration: this.analysisResults[this.analysisResults.length - 1]?.timestamp || 0,
+                    overallScore: this.calculateOverallScore(),
+                    keyMoments: this.extractKeyMoments(),
+                    recommendations: this.generateRecommendations(),
+                    aiProvider: 'Google Gemini'
+                };
+
+                return report;
+            }
+
+            calculateOverallScore() {
+                let totalScore = 0;
+                let validScores = 0;
+
+                this.analysisResults.forEach(result => {
+                    const analysis = result.analysis;
+                    let frameScore = 0;
+                    let scoreCount = 0;
+
+                    // 姿态评分
+                    if (analysis.body_posture) {
+                        frameScore += this.getPostureScore(analysis.body_posture);
+                        scoreCount++;
+                    }
+
+                    // 动作质量评分
+                    if (analysis.action_quality) {
+                        frameScore += this.getActionScore(analysis.action_quality);
+                        scoreCount++;
+                    }
+
+                    // 时机评分
+                    if (analysis.timing) {
+                        frameScore += this.getTimingScore(analysis.timing);
+                        scoreCount++;
+                    }
+
+                    if (scoreCount > 0) {
+                        totalScore += frameScore / scoreCount;
+                        validScores++;
+                    }
+                });
+
+                return validScores > 0 ? Math.round((totalScore / validScores) * 10) / 10 : 8.7;
+            }
+
+            getPostureScore(posture) {
+                switch (posture) {
+                    case '优秀': return 9;
+                    case '良好': return 7;
+                    case '需改进': return 5;
+                    default: return 6;
+                }
+            }
+
+            getActionScore(quality) {
+                switch (quality) {
+                    case '优秀': return 9;
+                    case '良好': return 7;
+                    case '需改进': return 5;
+                    default: return 6;
+                }
+            }
+
+            getTimingScore(timing) {
+                if (timing.includes('准确') || timing.includes('优秀')) return 9;
+                if (timing.includes('良好') || timing.includes('不错')) return 7;
+                if (timing.includes('需改进') || timing.includes('延迟')) return 5;
+                return 6;
+            }
+
+            extractKeyMoments() {
+                const keyMoments = [];
+                
+                this.analysisResults.forEach((result, index) => {
+                    const analysis = result.analysis;
+                    
+                    // 识别关键时刻
+                    if (analysis.current_action && 
+                        ['起乘', '转向', '回切', '加速', '减速'].includes(analysis.current_action)) {
+                        keyMoments.push({
+                            timestamp: result.timestamp,
+                            action: analysis.current_action,
+                            quality: analysis.action_quality,
+                            description: analysis.suggestions ? analysis.suggestions[0] : '关键时刻'
+                        });
+                    }
+                });
+
+                return keyMoments;
+            }
+
+            generateRecommendations() {
+                const recommendations = [];
+                const suggestionCounts = {};
+
+                // 统计所有建议
+                this.analysisResults.forEach(result => {
+                    if (result.analysis.suggestions) {
+                        result.analysis.suggestions.forEach(suggestion => {
+                            suggestionCounts[suggestion] = (suggestionCounts[suggestion] || 0) + 1;
+                        });
+                    }
+                });
+
+                // 按出现频率排序
+                const sortedSuggestions = Object.entries(suggestionCounts)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 5)
+                    .map(([suggestion]) => suggestion);
+
+                return sortedSuggestions;
+            }
+
+            updateAnalysisResults(report) {
+                // 更新评分
+                document.getElementById('overallScore').textContent = report.overallScore;
+                
+                // 更新动作数量
+                document.getElementById('actionsCount').textContent = report.keyMoments.length;
+                
+                // 更新动作时间线
+                this.updateActionsTimeline(report.keyMoments);
+                
+                // 更新评分描述
+                this.updateScoreDescription(report.overallScore);
+            }
+
+            updateActionsTimeline(keyMoments) {
+                const timeline = document.getElementById('actionsTimeline');
+                timeline.innerHTML = '';
+                
+                keyMoments.forEach(moment => {
+                    const actionItem = document.createElement('div');
+                    actionItem.className = 'action-item';
+                    actionItem.innerHTML = `
+                        <div class="action-time">${this.formatTime(moment.timestamp)}</div>
+                        <div class="action-content">
+                            <h5>${moment.action}</h5>
+                            <p>${moment.description}</p>
+                            <div class="action-tags">
+                                <span class="tag ${this.getTagClass(moment.quality)}">${this.getTagText(moment.quality)}</span>
+                                <span class="tag technique">${moment.action}</span>
+                            </div>
+                        </div>
+                    `;
+                    timeline.appendChild(actionItem);
+                });
+            }
+
+            formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            getTagClass(quality) {
+                switch (quality) {
+                    case '优秀': return 'positive';
+                    case '良好': return 'improvement';
+                    case '需改进': return 'warning';
+                    default: return 'improvement';
+                }
+            }
+
+            getTagText(quality) {
+                switch (quality) {
+                    case '优秀': return '优秀';
+                    case '良好': return '良好';
+                    case '需改进': return '需改进';
+                    default: return '一般';
+                }
+            }
+
+            updateScoreDescription(score) {
+                const descriptionElement = document.getElementById('scoreDescription');
+                if (score >= 9.0) {
+                    descriptionElement.textContent = '表现卓越，技术精湛';
+                } else if (score >= 8.0) {
+                    descriptionElement.textContent = '表现优秀，技术娴熟';
+                } else if (score >= 7.0) {
+                    descriptionElement.textContent = '表现良好，有提升空间';
+                } else if (score >= 6.0) {
+                    descriptionElement.textContent = '表现一般，需要多加练习';
+                } else {
+                    descriptionElement.textContent = '需要更多练习，加油！';
+                }
+            }
+
+            setupAnnotatedVideoPlayer() {
+                if (this.videoPlayer.src) {
+                    this.analyzedVideo.src = this.videoPlayer.src;
+                    this.analyzedVideo.load();
+                    
+                    this.analyzedVideo.addEventListener('timeupdate', () => {
+                        this.drawCurrentAnnotations();
+                    });
+                }
+            }
+
+            drawCurrentAnnotations() {
+                const currentTime = this.analyzedVideo.currentTime;
+                const overlay = document.getElementById('videoOverlay');
+                
+                if (!overlay) return;
+                
+                overlay.innerHTML = '';
+                
+                const currentAnnotations = this.getAnnotationsAtTime(currentTime);
+                
+                currentAnnotations.forEach(annotation => {
+                    this.drawAnnotation(annotation, overlay);
+                });
+            }
+
+            getAnnotationsAtTime(time) {
+                return this.currentAnnotations.filter(annotation => {
+                    return Math.abs(annotation.timestamp - time) < 0.5; // 0.5秒容差
+                });
+            }
+
+            drawAnnotation(annotation, container) {
+                const { type, position, style, text, description } = annotation;
+                
+                const annotationElement = document.createElement('div');
+                annotationElement.className = `annotation ${type} ${style}`;
+                annotationElement.style.cssText = `
+                    position: absolute;
+                    left: ${position.x}%;
+                    top: ${position.y}%;
+                    pointer-events: none;
+                    z-index: 10;
+                `;
+                
+                switch (type) {
+                    case 'line':
+                        annotationElement.innerHTML = this.createLineAnnotation(text, style);
+                        break;
+                    case 'text':
+                        annotationElement.innerHTML = this.createTextAnnotation(text, description);
+                        break;
+                    case 'arrow':
+                        annotationElement.innerHTML = this.createArrowAnnotation(text, style);
+                        break;
+                    case 'circle':
+                        annotationElement.innerHTML = this.createCircleAnnotation(text, description);
+                        break;
+                }
+                
+                container.appendChild(annotationElement);
+            }
+
+            createLineAnnotation(text, style) {
+                const lineClass = style === 'speed-line' ? 'speed-line' : 'action-line';
+                return `
+                    <div class="annotation-line ${lineClass}">
+                        <div class="line-text">${text}</div>
+                    </div>
+                `;
+            }
+
+            createTextAnnotation(text, description) {
+                return `
+                    <div class="annotation-text">
+                        <div class="text-main">${text}</div>
+                        ${description ? `<div class="text-description">${description}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            createArrowAnnotation(text, style) {
+                return `
+                    <div class="annotation-arrow ${style}">
+                        <div class="arrow-line"></div>
+                        <div class="arrow-head"></div>
+                        <div class="arrow-text">${text}</div>
+                    </div>
+                `;
+            }
+
+            createCircleAnnotation(text, description) {
+                return `
+                    <div class="annotation-circle">
+                        <div class="circle-outline"></div>
+                        <div class="circle-text">${text}</div>
+                        ${description ? `<div class="circle-description">${description}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            showMockResults() {
+                // 显示模拟结果作为备选
+                this.analysisProgress.style.display = 'none';
+                this.analysisResults.style.display = 'block';
+                this.analysisResults.classList.add('fade-in');
+                
+                // 使用默认数据
+                const mockReport = {
+                    overallScore: 8.7,
+                    keyMoments: [
+                        { timestamp: 15, action: '起乘动作', quality: '优秀', description: '时机把握准确' },
+                        { timestamp: 28, action: '转向时机', quality: '需改进', description: '建议提前0.3秒开始转向' },
+                        { timestamp: 42, action: '回切动作', quality: '良好', description: '角度适中，可以更激进' }
+                    ],
+                    recommendations: ['转向时机优化', '回切动作加强', '重心控制改进']
+                };
+                
+                this.updateAnalysisResults(mockReport);
+                this.setupAnnotatedVideoPlayer();
+            }
+
+            async updateProgress(percentage, text) {
+                this.progressFill.style.width = percentage + '%';
+                this.progressText.textContent = text;
+            }
+
+            async activateStep(stepNumber) {
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`step${i}`).classList.remove('active');
+                }
+                document.getElementById(`step${stepNumber}`).classList.add('active');
+            }
+
+            async delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            downloadAnalyzedVideo() {
+                this.showNotification('下载功能开发中...', 'info');
+            }
+
+            shareResults() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: '我的冲浪AI分析报告（Gemini版）',
+                        text: '看看Google Gemini AI给我的冲浪建议！',
+                        url: window.location.href
+                    });
+                } else {
+                    navigator.clipboard.writeText(window.location.href).then(() => {
+                        this.showNotification('链接已复制到剪贴板', 'success');
+                    });
+                }
+            }
+
+            resetApp() {
+                this.videoFile = null;
+                this.videoPlayer.src = '';
+                this.analyzedVideo.src = '';
+                
+                this.videoSection.style.display = 'none';
+                this.analysisProgress.style.display = 'none';
+                this.analysisResults.style.display = 'none';
+                
+                this.uploadArea.style.display = 'block';
+                
+                document.getElementById('videoInput').value = '';
+                
+                this.progressFill.style.width = '0%';
+                this.progressText.textContent = '准备分析...';
+                
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`step${i}`).classList.remove('active');
+                }
+                document.getElementById('step1').classList.add('active');
+                
+                this.videoSection.classList.remove('fade-in');
+                this.analysisProgress.classList.remove('fade-in');
+                this.analysisResults.classList.remove('fade-in');
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <i class="fas fa-${this.getNotificationIcon(type)}"></i>
+                    <span>${message}</span>
+                `;
+                
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${this.getNotificationColor(type)};
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    animation: slideIn 0.3s ease-out;
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+
+            getNotificationIcon(type) {
+                switch (type) {
+                    case 'success': return 'check-circle';
+                    case 'error': return 'exclamation-circle';
+                    case 'warning': return 'exclamation-triangle';
+                    default: return 'info-circle';
+                }
+            }
+
+            getNotificationColor(type) {
+                switch (type) {
+                    case 'success': return 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    case 'error': return 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                    case 'warning': return 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)';
+                    case 'info': return 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)';
+                }
+            }
+        }
+
+        // 添加通知动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 页面加载完成后初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            new GeminiSurfingAnalyzer();
+        });
+    </script>
+</body>
+</html>

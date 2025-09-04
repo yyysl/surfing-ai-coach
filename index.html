@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冲浪AI教练 - 智能动作分析</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-water"></i>
+                <h1>冲浪AI教练</h1>
+            </div>
+            <p class="subtitle">AI智能分析冲浪动作，专业指导提升技巧</p>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 视频上传区域 -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>上传冲浪视频</h3>
+                        <p>支持 MP4, MOV, AVI 格式，最大 100MB</p>
+                        <p class="upload-tip">AI将分析您的冲浪动作并提供专业建议</p>
+                        <button class="upload-btn" id="uploadBtn">选择视频文件</button>
+                        <input type="file" id="videoInput" accept="video/*" style="display: none;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视频预览区域 -->
+            <div class="video-section" id="videoSection" style="display: none;">
+                <h3>视频预览</h3>
+                <div class="video-container">
+                    <video id="videoPlayer" controls>
+                        您的浏览器不支持视频播放
+                    </video>
+                </div>
+                <div class="video-actions">
+                    <button class="analyze-btn" id="analyzeBtn">
+                        <i class="fas fa-brain"></i>
+                        开始AI分析
+                    </button>
+                    <button class="reset-btn" id="resetBtn">
+                        <i class="fas fa-redo"></i>
+                        重新上传
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI分析进度区域 -->
+            <div class="analysis-progress" id="analysisProgress" style="display: none;">
+                <h3>AI分析进度</h3>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">正在分析冲浪者位置...</div>
+                </div>
+                <div class="analysis-steps">
+                    <div class="step active" id="step1">
+                        <i class="fas fa-search"></i>
+                        <span>识别冲浪者</span>
+                    </div>
+                    <div class="step" id="step2">
+                        <i class="fas fa-route"></i>
+                        <span>分析运动轨迹</span>
+                    </div>
+                    <div class="step" id="step3">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>生成动作建议</span>
+                    </div>
+                    <div class="step" id="step4">
+                        <i class="fas fa-video"></i>
+                        <span>制作分析视频</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI分析结果区域 -->
+            <div class="analysis-section" id="analysisSection" style="display: none;">
+                <h3>AI分析结果</h3>
+                
+                <!-- 分析视频播放器 -->
+                <div class="analysis-video-container">
+                    <h4>带标注的分析视频</h4>
+                    <div class="video-wrapper">
+                        <video id="analysisVideo" controls>
+                            您的浏览器不支持视频播放
+                        </video>
+                        <div class="video-overlay" id="videoOverlay">
+                            <!-- 这里将显示AI分析的标注 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动作分析详情 -->
+                <div class="action-analysis">
+                    <h4>动作分析详情</h4>
+                    <div class="timeline-container">
+                        <div class="timeline" id="timeline">
+                            <!-- 时间轴将在这里动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <div class="action-breakdown">
+                        <div class="action-item" id="actionItem1">
+                            <div class="action-time">0:15</div>
+                            <div class="action-content">
+                                <h5>加速时机</h5>
+                                <p>在浪峰处开始加速，利用重力势能转换为动能</p>
+                                <div class="action-tags">
+                                    <span class="tag speed">加速</span>
+                                    <span class="tag timing">时机</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-item" id="actionItem2">
+                            <div class="action-time">0:28</div>
+                            <div class="action-content">
+                                <h5>回切动作</h5>
+                                <p>建议在浪壁中部进行回切，保持动力和平衡</p>
+                                <div class="action-tags">
+                                    <span class="tag turn">回切</span>
+                                    <span class="tag balance">平衡</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-item" id="actionItem3">
+                            <div class="action-time">0:42</div>
+                            <div class="action-content">
+                                <h5>站姿调整</h5>
+                                <p>重心稍微后移，为下一个动作做准备</p>
+                                <div class="action-tags">
+                                    <span class="tag stance">站姿</span>
+                                    <span class="tag preparation">准备</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 技术评分 -->
+                <div class="technical-score">
+                    <h4>技术评分</h4>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <div class="score-label">平衡控制</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 85%"></div>
+                            </div>
+                            <div class="score-value">8.5/10</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">时机把握</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 78%"></div>
+                            </div>
+                            <div class="score-value">7.8/10</div>
+                            </div>
+                        <div class="score-item">
+                            <div class="score-label">动作流畅度</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 82%"></div>
+                            </div>
+                            <div class="score-value">8.2/10</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">速度控制</div>
+                            <div class="score-bar">
+                                <div class="score-fill" style="width: 80%"></div>
+                            </div>
+                            <div class="score-value">8.0/10</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="action-buttons">
+                    <button class="download-btn" id="downloadBtn">
+                        <i class="fas fa-download"></i>
+                        下载分析视频
+                    </button>
+                    <button class="save-btn" id="saveBtn">
+                        <i class="fas fa-save"></i>
+                        保存分析报告
+                    </button>
+                    <button class="share-btn" id="shareBtn">
+                        <i class="fas fa-share"></i>
+                        分享结果
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部信息 -->
+        <footer class="footer">
+            <p>&copy; 2024 冲浪AI教练. 让AI助你成为更好的冲浪者</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
