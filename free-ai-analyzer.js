@@ -30,9 +30,9 @@ class FreeAIAnalyzer {
                 condition: 'wave_analysis',
                 analysis: {
                     surfer: {
-                        posture: '冲浪者姿态需要调整',
-                        position: '位置可以优化',
-                        technique: '技术有待改进'
+                        posture: 'AI分析中...',
+                        position: 'AI分析中...',
+                        technique: 'AI分析中...'
                     },
                     wave: {
                         condition: '海浪条件一般',
@@ -149,47 +149,11 @@ class FreeAIAnalyzer {
     }
 
     /**
-     * 生成标注建议
+     * 生成标注建议 - 已移除假数据，只使用AI真实分析
      */
     generateAnnotations(timestamp, frameNumber) {
-        const annotations = [];
-        
-        // 根据时间戳生成不同的标注
-        if (timestamp < 3) {
-            annotations.push({
-                type: 'line',
-                position: { x: 20, y: 20 },
-                style: 'speed-line',
-                text: '速度建立',
-                description: '在浪的顶端建立初始速度，这是成功的关键'
-            });
-        } else if (timestamp < 8) {
-            annotations.push({
-                type: 'arrow',
-                position: { x: 50, y: 30 },
-                style: 'shoulder-arrow',
-                text: '肩膀调整',
-                description: '肩膀需要更打开，朝向转向方向'
-            });
-        } else if (timestamp < 15) {
-            annotations.push({
-                type: 'circle',
-                position: { x: 60, y: 50 },
-                style: 'balance-circle',
-                text: '重心控制',
-                description: '保持重心在板中央，准备转向'
-            });
-        } else {
-            annotations.push({
-                type: 'text',
-                position: { x: 30, y: 70 },
-                style: 'technique-text',
-                text: '回切准备',
-                description: '准备执行回切动作，注意速度和角度'
-            });
-        }
-        
-        return annotations;
+        // 移除所有硬编码假标注 - 应该从AI分析结果获取
+        return [];
     }
 
     /**

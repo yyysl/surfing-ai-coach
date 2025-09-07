@@ -503,80 +503,9 @@
             }
 
             generateDemoAnnotations() {
-                // 生成演示用的标注数据
+                // 移除所有演示假数据 - 应该使用真实AI分析
                 this.currentAnnotations = [
-                    {
-                        type: 'line',
-                        position: { x: 20, y: 20 },
-                        style: 'speed-line',
-                        text: '速度区间 Speed Line',
-                        description: '在顶端速度是最快的,中部相对较弱,底部是最慢的。',
-                        timestamp: 0,
-                        duration: 10
-                    },
-                    {
-                        type: 'arrow',
-                        position: { x: 50, y: 50 },
-                        style: 'action-arrow',
-                        text: '回切动作',
-                        description: '建议在浪峰处提前0.3秒开始转向',
-                        timestamp: 15,
-                        duration: 5
-                    },
-                    {
-                        type: 'circle',
-                        position: { x: 60, y: 40 },
-                        style: 'balance-circle',
-                        text: '重心调整',
-                        description: '建议调整重心位置以获得更好的平衡',
-                        timestamp: 28,
-                        duration: 8
-                    },
-                    {
-                        type: 'text',
-                        position: { x: 70, y: 60 },
-                        style: 'instruction-text',
-                        text: '双手撑直',
-                        description: '保持手臂在身体两侧',
-                        timestamp: 42,
-                        duration: 6
-                    },
-                    {
-                        type: 'arrow',
-                        position: { x: 30, y: 70 },
-                        style: 'action-arrow',
-                        text: '加速时机',
-                        description: '在浪峰处开始加速，利用重力势能',
-                        timestamp: 65,
-                        duration: 7
-                    },
-                    {
-                        type: 'circle',
-                        position: { x: 80, y: 30 },
-                        style: 'balance-circle',
-                        text: '平衡控制',
-                        description: '重心控制稳定，表现优秀',
-                        timestamp: 78,
-                        duration: 5
-                    },
-                    {
-                        type: 'line',
-                        position: { x: 40, y: 50 },
-                        style: 'action-line',
-                        text: '动作轨迹',
-                        description: '回切动作轨迹分析',
-                        timestamp: 105,
-                        duration: 8
-                    },
-                    {
-                        type: 'text',
-                        position: { x: 60, y: 80 },
-                        style: 'instruction-text',
-                        text: '放到前脚上面',
-                        description: '重心前移，提高速度',
-                        timestamp: 132,
-                        duration: 6
-                    }
+                    // 不再生成假的演示标注
                 ];
             }
 

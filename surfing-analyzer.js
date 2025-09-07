@@ -489,51 +489,17 @@ class SurfingAIAnalyzer {
     }
 
     async mockOpenAIAnalysis(prompt) {
-        // 模拟OpenAI API响应
+        // 移除假的模拟分析数据 - 应该使用真实AI分析
         await this.delay(2000);
         
         return {
-            score: 8.7,
-            duration: '2:45',
-            actionsCount: 12,
+            score: 0,
+            duration: '等待AI分析...',
+            actionsCount: 0,
             actions: [
-                {
-                    time: '0:15',
-                    name: '起乘动作',
-                    description: '时机把握准确，重心控制良好，建议继续保持',
-                    type: 'positive',
-                    technique: '起乘'
-                },
-                {
-                    time: '0:28',
-                    name: '转向时机',
-                    description: '建议在浪峰处提前0.3秒开始转向，可以获得更好的动力和流畅性',
-                    type: 'warning',
-                    technique: '转向'
-                },
-                {
-                    time: '0:42',
-                    name: '回切动作',
-                    description: '回切角度适中，但可以更激进一些，增加动作的观赏性',
-                    type: 'improvement',
-                    technique: '回切'
-                },
-                {
-                    time: '1:05',
-                    name: '重心控制',
-                    description: '在高速滑行时重心控制稳定，表现优秀',
-                    type: 'positive',
-                    technique: '平衡'
-                },
-                {
-                    time: '1:18',
-                    name: '手臂位置',
-                    description: '保持手臂在身体两侧，有助于更好的平衡控制',
-                    type: 'improvement',
-                    technique: '姿态'
-                }
+                // 移除假的动作分析数据
             ],
-            summary: '整体表现优秀，技术娴熟，在转向时机和回切动作上还有提升空间。建议多练习在浪峰处的转向时机把握，以及增加回切动作的激进程度。'
+            summary: '等待AI分析结果...'
         };
     }
 

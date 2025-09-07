@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>真实视频测试 - AI冲浪分析</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .video-info {
+            background: #e7f3ff;
+            border: 1px solid #4285f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .frames-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .frame-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .frame-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .frame-info {
+            padding: 15px;
+        }
+        
+        .frame-time {
+            font-weight: bold;
+            color: #4285f4;
+            margin-bottom: 10px;
+        }
+        
+        .analysis-result {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 5px 5px 0;
+            white-space: pre-wrap;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .test-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .test-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .api-key-input {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        
+        .progress {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #4285f4, #34a853);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 真实视频AI分析测试</h1>
+            <p>使用你上传的视频数据进行AI分析测试和调试</p>
+        </div>
+
+        <div class="video-info">
+            <h3>📹 视频信息</h3>
+            <div id="videoDetails"></div>
+        </div>
+
+        <div class="test-controls">
+            <input type="password" id="apiKey" class="api-key-input" placeholder="输入 Gemini API Key">
+            <br>
+            <button class="test-btn" onclick="testSingleFrame()">测试单帧分析</button>
+            <button class="test-btn" onclick="testAllFrames()">测试所有帧</button>
+            <button class="test-btn" onclick="testIntelligentAnalysis()">测试智能分析</button>
+        </div>
+
+        <div id="progressContainer" style="display: none;">
+            <div class="progress">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+        </div>
+
+        <div class="frames-container" id="framesContainer"></div>
+    </div>
+
+    <script>
+        // 你的视频数据
+        const videoData = {
+            "videoInfo": {
+                "name": "84_1756955335.mp4",
+                "size": 965266,
+                "type": "video/mp4",
+                "duration": 7.033333,
+                "width": 1280,
+                "height": 720
+            },
+            "frames": [
+                {
+                    "timePoint": 1.4066666,
+                    "base64": "/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAHgAoADASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAAAAECAwQFBgf/xABDEAABBAADBQYDBAkDAgYDAAABAAIDEQQSIRMxQVFhBRQicYGRMlKhFUJicgYjM0NTgpKx4RTB0TTwFiRjc6PxJVSi/8QAFwEBAQEBAAAAAAAAAAAAAAAAAAECA//EABcRAQEBAQAAAAAAAAAAAAAAAAARASH/2gAMAwEAAhEDEQA/AIIQhaczTCSYQMJpBNAIQhAIQhAIQhAIQhAIQhAJpIQNCEIBCEkDQhCAQhCAQhCAQhCAQhCBoQkgEIQgaEkIBCSEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCEAhCECQhCBohCEUIQhBFNJNIoEhCECSTSQI70IO9CIkmlxTQCaEIBCEIBCEIBCEIGhCSATSTQJNJCAQhNAkIQgEIQgaEkIGhJCBoQhAIQhAIQhAIQhAIQhAkIQgEIQgaSEIBCEIBCEIBCEIBCEIBCEIBCEIBCSEDQkhAIQhAIQhAIQhAIQhAqRSaEAhCEAkU0IIoUlFFJJNCCJQmkglWqdIQiHWiYSTQNCEIBCEIBCEIBCE0CQhCAQhCApOkk0CQmikCQmhAkJoQJCEIBCaFQIQhAIRaLQCErCMwQNCWYc0ZhzQNCjtGfMPdG0Z8w90DQobaP5x7o20X8Qe6CaFDbw/xG+6XeYf4rfdILEKrvMP8Vtf8AzJd3mH8M1Pgg0SVdV/8AhKPKP6R0qGJu55/mR1pJ7/yE//Z",
+                    "size": 29
+                },
+                {
+                    "timePoint": 3.5166665,
+                    "base64": "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"
+                },
+                {
+                    "timePoint": 5.6266664,
+                    "base64": "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"
+                }
+            ],
+            "timestamp": "2025-09-05T04:36:18.707Z",
+            "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        };
+
+        // 初始化页面
+        function initializePage() {
+            displayVideoInfo();
+            displayFrames();
+        }
+
+        // 显示视频信息
+        function displayVideoInfo() {
+            const info = videoData.videoInfo;
+            document.getElementById('videoDetails').innerHTML = `
+                <strong>文件名:</strong> ${info.name}<br>
+                <strong>大小:</strong> ${(info.size / 1024 / 1024).toFixed(2)} MB<br>
+                <strong>时长:</strong> ${info.duration.toFixed(1)} 秒<br>
+                <strong>尺寸:</strong> ${info.width}x${info.height}<br>
+                <strong>格式:</strong> ${info.type}<br>
+                <strong>帧数:</strong> ${videoData.frames.length} 帧
+            `;
+        }
+
+        // 显示所有帧
+        function displayFrames() {
+            const container = document.getElementById('framesContainer');
+            container.innerHTML = '';
+
+            videoData.frames.forEach((frame, index) => {
+                const frameCard = document.createElement('div');
+                frameCard.className = 'frame-card';
+                frameCard.innerHTML = `
+                    <img src="data:image/jpeg;base64,${frame.base64}" class="frame-image" alt="Frame ${index + 1}">
+                    <div class="frame-info">
+                        <div class="frame-time">时间点: ${frame.timePoint.toFixed(2)}秒</div>
+                        <div>大小: ${frame.size}KB</div>
+                        <div id="analysis-${index}" class="analysis-loading" style="display: none;">
+                            <div class="loading">🤖 AI分析中...</div>
+                        </div>
+                        <div id="result-${index}" class="analysis-result" style="display: none;"></div>
+                        <div id="error-${index}" class="error-message" style="display: none;"></div>
+                    </div>
+                `;
+                container.appendChild(frameCard);
+            });
+        }
+
+        // 获取API密钥
+        function getApiKey() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert('请输入 Gemini API Key');
+                return null;
+            }
+            return apiKey;
+        }
+
+        // 测试单帧分析
+        async function testSingleFrame() {
+            const apiKey = getApiKey();
+            if (!apiKey) return;
+
+            const frameIndex = 0; // 测试第一帧
+            await analyzeFrame(frameIndex, apiKey);
+        }
+
+        // 测试所有帧
+        async function testAllFrames() {
+            const apiKey = getApiKey();
+            if (!apiKey) return;
+
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            
+            progressContainer.style.display = 'block';
+            
+            for (let i = 0; i < videoData.frames.length; i++) {
+                const progress = ((i + 1) / videoData.frames.length) * 100;
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${Math.round(progress)}%`;
+                
+                await analyzeFrame(i, apiKey);
+                
+                // 添加延迟避免API限制
+                if (i < videoData.frames.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+            }
+        }
+
+        // 分析单个帧
+        async function analyzeFrame(frameIndex, apiKey) {
+            const frame = videoData.frames[frameIndex];
+            const analysisDiv = document.getElementById(`analysis-${frameIndex}`);
+            const resultDiv = document.getElementById(`result-${frameIndex}`);
+            const errorDiv = document.getElementById(`error-${frameIndex}`);
+
+            // 显示加载状态
+            analysisDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            try {
+                // 构建分析提示词
+                const prompt = `你是一位专业的冲浪教练。请分析这个冲浪视频帧（时间点：${frame.timePoint.toFixed(2)}秒），并给出具体的技术指导。
+
+请从以下方面进行分析：
+1. 冲浪者的姿态和平衡
+2. 板位和重心
+3. 技术动作评估
+4. 改进建议
+
+请用中文回答，给出实用的指导建议。`;
+
+                // 调用Gemini API
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inline_data: {
+                                        mime_type: "image/jpeg",
+                                        data: frame.base64
+                                    }
+                                }
+                            ]
+                        }],
+                        generationConfig: {
+                            maxOutputTokens: 800,
+                            temperature: 0.7
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API请求失败: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    const analysisText = data.candidates[0].content.parts[0].text;
+                    
+                    // 显示结果
+                    resultDiv.innerHTML = analysisText;
+                    resultDiv.style.display = 'block';
+                } else {
+                    throw new Error('API返回格式不正确');
+                }
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                errorDiv.innerHTML = `分析失败: ${error.message}`;
+                errorDiv.style.display = 'block';
+            } finally {
+                analysisDiv.style.display = 'none';
+            }
+        }
+
+        // 测试智能分析（完整的视频分析流程）
+        async function testIntelligentAnalysis() {
+            const apiKey = getApiKey();
+            if (!apiKey) return;
+
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '10%';
+            progressBar.textContent = '开始智能分析...';
+
+            try {
+                // 第一步：内容概览
+                progressBar.style.width = '30%';
+                progressBar.textContent = '分析视频内容...';
+
+                const contentOverview = await getContentOverview(apiKey);
+                
+                // 第二步：制定策略
+                progressBar.style.width = '50%';
+                progressBar.textContent = '制定分析策略...';
+
+                const strategy = await formulateStrategy(contentOverview, apiKey);
+                
+                // 第三步：详细分析
+                progressBar.style.width = '70%';
+                progressBar.textContent = '执行详细分析...';
+
+                const detailedAnalysis = await performDetailedAnalysis(strategy, apiKey);
+                
+                // 显示最终结果
+                progressBar.style.width = '100%';
+                progressBar.textContent = '分析完成！';
+
+                displayFinalAnalysis(contentOverview, strategy, detailedAnalysis);
+
+            } catch (error) {
+                console.error('Intelligent analysis error:', error);
+                alert(`智能分析失败: ${error.message}`);
+            }
+        }
+
+        // 获取内容概览
+        async function getContentOverview(apiKey) {
+            const overviewPrompt = `简单描述这个冲浪视频片段中发生了什么？冲浪者在做什么动作？请用中文简要说明。`;
+            
+            const overview = [];
+            for (let i = 0; i < videoData.frames.length; i++) {
+                const frame = videoData.frames[i];
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: overviewPrompt },
+                                { inline_data: { mime_type: "image/jpeg", data: frame.base64 } }
+                            ]
+                        }],
+                        generationConfig: { maxOutputTokens: 200, temperature: 0.7 }
+                    })
+                });
+
+                const data = await response.json();
+                const description = data.candidates[0].content.parts[0].text;
+                
+                overview.push({
+                    timePoint: frame.timePoint,
+                    description: description
+                });
+
+                if (i < videoData.frames.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            }
+            
+            return overview;
+        }
+
+        // 制定分析策略
+        async function formulateStrategy(contentOverview, apiKey) {
+            const strategyPrompt = `基于以下视频内容描述，请确定3个最重要的时间段进行详细分析。
+            
+内容概览：
+${contentOverview.map(item => `${item.timePoint.toFixed(2)}秒: ${item.description}`).join('\n')}
+
+请返回JSON格式：
+{
+  "segments": [
+    {"timePoint": 1.41, "focus": "起始阶段分析重点"},
+    {"timePoint": 3.52, "focus": "中段技术分析重点"},
+    {"timePoint": 5.63, "focus": "结束阶段分析重点"}
+  ]
+}`;
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: strategyPrompt }] }],
+                    generationConfig: { maxOutputTokens: 300, temperature: 0.3 }
+                })
+            });
+
+            const data = await response.json();
+            const strategyText = data.candidates[0].content.parts[0].text;
+            
+            try {
+                // 清理响应文本并解析JSON
+                const cleanText = strategyText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                const strategy = JSON.parse(cleanText);
+                return strategy;
+            } catch (error) {
+                console.warn('Strategy parsing failed, using default strategy');
+                return {
+                    segments: [
+                        { timePoint: 1.41, focus: "起始阶段技术分析" },
+                        { timePoint: 3.52, focus: "中段滑行技术" },
+                        { timePoint: 5.63, focus: "结束阶段表现" }
+                    ]
+                };
+            }
+        }
+
+        // 执行详细分析
+        async function performDetailedAnalysis(strategy, apiKey) {
+            const detailedResults = [];
+            
+            for (let i = 0; i < strategy.segments.length; i++) {
+                const segment = strategy.segments[i];
+                const frame = videoData.frames[i];
+                
+                const detailedPrompt = `作为专业冲浪教练，请详细分析这个时刻的冲浪技术（${segment.timePoint.toFixed(2)}秒）。
+
+分析重点：${segment.focus}
+
+请从以下方面给出详细分析：
+1. 姿态和平衡评估
+2. 技术动作质量
+3. 时机把握
+4. 具体改进建议
+
+请用中文给出专业且实用的指导。`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: detailedPrompt },
+                                { inline_data: { mime_type: "image/jpeg", data: frame.base64 } }
+                            ]
+                        }],
+                        generationConfig: { maxOutputTokens: 600, temperature: 0.7 }
+                    })
+                });
+
+                const data = await response.json();
+                const analysis = data.candidates[0].content.parts[0].text;
+                
+                detailedResults.push({
+                    timePoint: segment.timePoint,
+                    focus: segment.focus,
+                    analysis: analysis
+                });
+
+                if (i < strategy.segments.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+            }
+            
+            return detailedResults;
+        }
+
+        // 显示最终分析结果
+        function displayFinalAnalysis(contentOverview, strategy, detailedAnalysis) {
+            const container = document.getElementById('framesContainer');
+            
+            // 创建最终分析结果卡片
+            const finalCard = document.createElement('div');
+            finalCard.className = 'frame-card';
+            finalCard.innerHTML = `
+                <div class="frame-info">
+                    <div class="frame-time">🎯 智能分析结果</div>
+                    
+                    <h4>📋 内容概览</h4>
+                    ${contentOverview.map(item => `
+                        <div><strong>${item.timePoint.toFixed(2)}秒:</strong> ${item.description}</div>
+                    `).join('')}
+                    
+                    <h4>🎯 分析策略</h4>
+                    ${strategy.segments.map(seg => `
+                        <div><strong>${seg.timePoint.toFixed(2)}秒:</strong> ${seg.focus}</div>
+                    `).join('')}
+                    
+                    <h4>🔍 详细分析</h4>
+                    ${detailedAnalysis.map(result => `
+                        <div class="analysis-result">
+                            <strong>时间点 ${result.timePoint.toFixed(2)}秒 - ${result.focus}</strong><br>
+                            ${result.analysis}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            container.appendChild(finalCard);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>

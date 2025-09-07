@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频文字叠加分析 - 冲浪教练</title>
+    <link rel="stylesheet" href="surfing-analyzer.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .video-container {
+            position: relative;
+            max-width: 100%;
+            margin: 20px 0;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .video-player {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .text-overlay {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+            border-left: 4px solid #4285f4;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .text-overlay.show {
+            opacity: 1;
+        }
+        
+        .time-segment {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .time-segment:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .time-label {
+            color: #4285f4;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .analysis-text {
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+        
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .api-config {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .api-config input {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .progress-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            color: #666;
+        }
+        
+        .analysis-segments {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .text-overlay {
+                bottom: 60px;
+                left: 10px;
+                right: 10px;
+                font-size: 14px;
+                padding: 12px 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .test-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-play-circle"></i>
+                <h1>视频文字叠加分析 - 冲浪教练</h1>
+            </div>
+            <p class="subtitle">Gemini专业分析直接显示在视频上，如同专业教练解说</p>
+        </header>
+
+        <main class="main-content">
+            <!-- API配置 -->
+            <div class="api-config">
+                <h3><i class="fab fa-google"></i> Gemini API配置</h3>
+                <input type="password" id="apiKeyInput" 
+                       value="AIzaSyAMmui41ISIe88sqFmM4D9b2bG9vmBlqo4"
+                       placeholder="输入您的Gemini API Key">
+                <button class="test-button" onclick="testConnection()" style="background: white; color: #4285f4; max-width: 200px;">
+                    <i class="fas fa-check"></i> 测试连接
+                </button>
+                <div id="apiStatus"></div>
+            </div>
+
+            <!-- 视频上传和播放 -->
+            <div class="test-section">
+                <h3><i class="fas fa-video"></i> 视频分析</h3>
+                <input type="file" id="videoInput" accept="video/*" style="width: 100%; margin-bottom: 15px;">
+                
+                <div id="videoSection" style="display: none;">
+                    <div class="video-container">
+                        <video id="videoPlayer" class="video-player" controls></video>
+                        <div id="textOverlay" class="text-overlay">
+                            <div class="analysis-text">AI分析将在这里显示...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="test-button" onclick="analyzeVideo()" id="analyzeBtn">
+                            <i class="fas fa-brain"></i> 开始AI分析
+                        </button>
+                        <button class="test-button" onclick="toggleOverlay()" id="toggleBtn" style="background: #17a2b8;" disabled>
+                            <i class="fas fa-eye"></i> 显示/隐藏分析
+                        </button>
+                        <button class="test-button" onclick="exportAnalysis()" id="exportBtn" style="background: #28a745;" disabled>
+                            <i class="fas fa-download"></i> 导出分析
+                        </button>
+                    </div>
+                    
+                    <div id="progressInfo" class="progress-info" style="display: none;">
+                        正在分析视频，请稍候...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 隐藏的分析数据存储 -->
+            <div id="analysisData" class="analysis-segments"></div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 视频文字叠加分析系统</p>
+        </footer>
+    </div>
+
+    <script>
+        let apiKey = 'AIzaSyAMmui41ISIe88sqFmM4D9b2bG9vmBlqo4';
+        let videoElement = null;
+        let textOverlay = null;
+        let analysisData = [];
+        let overlayVisible = true;
+
+        // API连接测试
+        async function testConnection() {
+            apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                showApiStatus('请输入API Key', 'error');
+                return;
+            }
+
+            showApiStatus('正在测试连接...', 'info');
+            
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: '测试连接' }] }],
+                        generationConfig: { maxOutputTokens: 10 }
+                    })
+                });
+
+                if (response.ok) {
+                    showApiStatus('✅ API连接成功！', 'success');
+                } else {
+                    showApiStatus('❌ API连接失败', 'error');
+                }
+            } catch (error) {
+                showApiStatus('❌ 网络错误', 'error');
+            }
+        }
+
+        function showApiStatus(message, type) {
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545', 
+                info: '#17a2b8',
+                warning: '#ffc107'
+            };
+            
+            document.getElementById('apiStatus').innerHTML = 
+                `<div style="color: ${colors[type]}; margin-top: 10px; font-weight: bold;">${message}</div>`;
+        }
+
+        // 视频处理
+        document.getElementById('videoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('video/')) {
+                alert('请选择视频文件');
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            videoElement = document.getElementById('videoPlayer');
+            textOverlay = document.getElementById('textOverlay');
+            
+            videoElement.src = url;
+            videoElement.load();
+            
+            document.getElementById('videoSection').style.display = 'block';
+            
+            // 监听视频时间更新，实时显示对应的分析文字
+            videoElement.addEventListener('timeupdate', updateOverlay);
+            
+            videoElement.addEventListener('loadedmetadata', () => {
+                console.log(`视频加载完成: ${videoElement.duration}秒`);
+            });
+            
+            // 重置分析数据
+            analysisData = [];
+            document.getElementById('toggleBtn').disabled = true;
+            document.getElementById('exportBtn').disabled = true;
+        });
+
+        // 实时更新文字叠加
+        function updateOverlay() {
+            if (!videoElement || analysisData.length === 0) return;
+            
+            const currentTime = videoElement.currentTime;
+            
+            // 找到当前时间对应的分析文字
+            const currentAnalysis = analysisData.find(segment => 
+                currentTime >= segment.startTime && currentTime <= segment.endTime
+            );
+            
+            if (currentAnalysis && overlayVisible) {
+                textOverlay.innerHTML = `
+                    <div class="time-label">${currentAnalysis.timeLabel}</div>
+                    <div class="analysis-text">${currentAnalysis.text}</div>
+                `;
+                textOverlay.classList.add('show');
+            } else {
+                textOverlay.classList.remove('show');
+            }
+        }
+
+        // AI分析视频 - 智能内容识别
+        async function analyzeVideo() {
+            if (!videoElement || !videoElement.src) {
+                alert('请先上传视频');
+                return;
+            }
+
+            if (!apiKey) {
+                alert('请先设置API Key');
+                return;
+            }
+
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const progressInfo = document.getElementById('progressInfo');
+            
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 分析中...';
+            progressInfo.style.display = 'block';
+            
+            try {
+                analysisData = [];
+                const duration = videoElement.duration;
+                
+                // 第一步：快速浏览整个视频，让AI识别内容类型和关键时刻
+                progressInfo.innerHTML = '第1步：AI正在识别视频内容类型...';
+                
+                const timePoints = [
+                    duration * 0.1,   // 10%
+                    duration * 0.3,   // 30%
+                    duration * 0.5,   // 50%
+                    duration * 0.7,   // 70%
+                    duration * 0.9    // 90%
+                ];
+                
+                let contentOverview = '';
+                
+                // 快速浏览5个时间点
+                for (let i = 0; i < timePoints.length; i++) {
+                    videoElement.currentTime = timePoints[i];
+                    await new Promise(resolve => {
+                        videoElement.onseeked = resolve;
+                        setTimeout(resolve, 500);
+                    });
+                    
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = videoElement.videoWidth;
+                    canvas.height = videoElement.videoHeight;
+                    ctx.drawImage(videoElement, 0, 0);
+                    const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                    
+                    const prompt = `简单描述这个冲浪视频片段中发生了什么？冲浪者在做什么动作？
+时间点：${timePoints[i].toFixed(1)}秒
+请用一句话简单描述，如："冲浪者正在起乘"、"冲浪者在浪壁上滑行"、"冲浪者正在转向"等。`;
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: prompt },
+                                    {
+                                        inline_data: {
+                                            mime_type: "image/jpeg",
+                                            data: base64Image
+                                        }
+                                    }
+                                ]
+                            }],
+                            generationConfig: {
+                                temperature: 0.3,
+                                maxOutputTokens: 100
+                            }
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const description = data.candidates[0].content.parts[0].text;
+                        contentOverview += `${timePoints[i].toFixed(1)}s: ${description}\n`;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                // 第二步：基于内容识别结果，让AI决定分析哪些关键时刻
+                progressInfo.innerHTML = '第2步：AI正在确定关键分析时刻...';
+                
+                const strategyPrompt = `基于以下视频内容概览，作为专业冲浪教练，请确定最重要的3个时间段进行详细分析：
+
+视频内容：
+${contentOverview}
+
+请返回JSON格式：
+{
+  "segments": [
+    {
+      "timePoint": 时间点(秒),
+      "label": "分析重点描述",
+      "reason": "为什么这个时刻重要"
+    }
+  ]
+}
+
+选择标准：
+1. 关键技术动作时刻
+2. 明显的技术问题时刻  
+3. 可以给出改进建议的时刻`;
+
+                const strategyResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: strategyPrompt }] }],
+                        generationConfig: {
+                            temperature: 0.3,
+                            maxOutputTokens: 500
+                        }
+                    })
+                });
+
+                let analysisSegments = [];
+                
+                if (strategyResponse.ok) {
+                    const strategyData = await strategyResponse.json();
+                    const strategyText = strategyData.candidates[0].content.parts[0].text;
+                    
+                    try {
+                        // 尝试解析AI返回的JSON
+                        let cleanText = strategyText.trim();
+                        if (cleanText.startsWith('```json')) {
+                            cleanText = cleanText.substring(7);
+                        } else if (cleanText.startsWith('```')) {
+                            cleanText = cleanText.substring(3);
+                        }
+                        if (cleanText.endsWith('```')) {
+                            cleanText = cleanText.substring(0, cleanText.length - 3);
+                        }
+                        cleanText = cleanText.trim();
+                        
+                        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            const strategy = JSON.parse(jsonMatch[0]);
+                            analysisSegments = strategy.segments || [];
+                        }
+                    } catch (error) {
+                        console.log('AI策略解析失败，使用默认分析点');
+                    }
+                }
+                
+                // 如果AI策略失败，使用智能默认分析点
+                if (analysisSegments.length === 0) {
+                    analysisSegments = [
+                        { timePoint: duration * 0.2, label: "前段动作分析", reason: "分析初始技术状态" },
+                        { timePoint: duration * 0.5, label: "中段技术分析", reason: "分析主要技术动作" },
+                        { timePoint: duration * 0.8, label: "后段表现分析", reason: "分析技术完成情况" }
+                    ];
+                }
+                
+                // 第三步：对AI选定的关键时刻进行详细分析
+                for (let i = 0; i < analysisSegments.length; i++) {
+                    const segment = analysisSegments[i];
+                    
+                    progressInfo.innerHTML = `第3步：正在分析 ${segment.label} (${i + 1}/${analysisSegments.length})...`;
+                    
+                    // 跳转到分析时间点
+                    videoElement.currentTime = segment.timePoint;
+                    await new Promise(resolve => {
+                        videoElement.onseeked = resolve;
+                        setTimeout(resolve, 1000);
+                    });
+                    
+                    // 提取视频帧
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = videoElement.videoWidth;
+                    canvas.height = videoElement.videoHeight;
+                    ctx.drawImage(videoElement, 0, 0);
+                    const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                    
+                    // 详细分析提示词
+                    const detailPrompt = `作为专业冲浪教练，请详细分析这个时刻的冲浪技术：
+
+时间点：${segment.timePoint.toFixed(1)}秒
+分析重点：${segment.label}
+
+请从以下方面给出专业分析：
+1. 冲浪者的姿态和技术状况
+2. 当前动作的优缺点
+3. 具体的改进建议
+
+请用简洁专业的中文回复，适合在视频上显示。重点突出实用的技术指导。`;
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: detailPrompt },
+                                    {
+                                        inline_data: {
+                                            mime_type: "image/jpeg",
+                                            data: base64Image
+                                        }
+                                    }
+                                ]
+                            }],
+                            generationConfig: {
+                                temperature: 0.7,
+                                maxOutputTokens: 500
+                            }
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const analysis = data.candidates[0].content.parts[0].text;
+                        
+                        // 格式化分析文字
+                        const formattedText = analysis.replace(/(\d+\.|[。！？])/g, '$1<br>').replace(/\n/g, '<br>');
+                        
+                        // 设置显示时间段（前后各扩展一些时间）
+                        const displayDuration = Math.min(duration / 3, 15); // 最多15秒
+                        const startTime = Math.max(0, segment.timePoint - displayDuration / 2);
+                        const endTime = Math.min(duration, segment.timePoint + displayDuration / 2);
+                        
+                        analysisData.push({
+                            startTime: startTime,
+                            endTime: endTime,
+                            timeLabel: `${segment.label} (${Math.floor(segment.timePoint)}s)`,
+                            text: formattedText,
+                            rawText: analysis
+                        });
+                    }
+                    
+                    // 避免API限制
+                    if (i < analysisSegments.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    }
+                }
+                
+                progressInfo.innerHTML = '✅ 智能分析完成！播放视频查看AI定制解说';
+                setTimeout(() => {
+                    progressInfo.style.display = 'none';
+                }, 3000);
+                
+                // 启用控制按钮
+                document.getElementById('toggleBtn').disabled = false;
+                document.getElementById('exportBtn').disabled = false;
+                
+                // 重置视频到开始
+                videoElement.currentTime = 0;
+
+            } catch (error) {
+                progressInfo.innerHTML = `❌ 分析失败: ${error.message}`;
+                progressInfo.style.color = '#dc3545';
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i class="fas fa-brain"></i> 开始AI分析';
+            }
+        }
+
+        // 切换叠加显示
+        function toggleOverlay() {
+            overlayVisible = !overlayVisible;
+            const toggleBtn = document.getElementById('toggleBtn');
+            
+            if (overlayVisible) {
+                toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 隐藏分析';
+                updateOverlay();
+            } else {
+                toggleBtn.innerHTML = '<i class="fas fa-eye"></i> 显示分析';
+                textOverlay.classList.remove('show');
+            }
+        }
+
+        // 导出分析结果
+        function exportAnalysis() {
+            if (analysisData.length === 0) {
+                alert('暂无分析数据');
+                return;
+            }
+            
+            let exportText = '冲浪视频AI分析报告\n\n';
+            analysisData.forEach(segment => {
+                exportText += `${segment.timeLabel}\n`;
+                exportText += `${segment.rawText}\n\n`;
+            });
+            
+            const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '冲浪分析报告.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('视频文字叠加分析系统已加载');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频上传调试 - 直接发送给开发者</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .upload-area {
+            border: 3px dashed #4285f4;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area.dragover {
+            border-color: #34a853;
+            background: #f0fff0;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+        
+        .video-preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .video-preview video {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .info-panel {
+            background: #f8f9fa;
+            border-left: 4px solid #4285f4;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .debug-info {
+            background: #e7f3ff;
+            border: 1px solid #4285f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .status.warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 视频上传调试系统</h1>
+            <p>直接上传你的冲浪视频，让我来测试和调试</p>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #4285f4; margin-bottom: 20px;"></i>
+            <h3>拖拽视频文件到这里，或点击上传</h3>
+            <p>支持 MP4, MOV, AVI 格式</p>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                选择视频文件
+            </button>
+            <input type="file" id="fileInput" accept="video/*" style="display: none;">
+        </div>
+
+        <div id="videoPreview" class="video-preview" style="display: none;">
+            <video id="videoPlayer" controls></video>
+            <div id="videoInfo" class="info-panel"></div>
+        </div>
+
+        <div class="info-panel">
+            <h3>📋 上传说明</h3>
+            <ul>
+                <li><strong>文件格式：</strong>MP4, MOV, AVI 等常见视频格式</li>
+                <li><strong>文件大小：</strong>建议小于 100MB（会自动压缩）</li>
+                <li><strong>视频内容：</strong>你遇到问题的冲浪视频</li>
+                <li><strong>处理方式：</strong>视频会转换为base64格式用于调试</li>
+            </ul>
+        </div>
+
+        <div id="debugOutput" class="debug-info" style="display: none;">
+            <h4>调试信息：</h4>
+            <div id="debugContent"></div>
+        </div>
+
+        <div id="videoDataOutput" style="display: none;">
+            <h3>📤 视频数据（复制发送给开发者）</h3>
+            <textarea id="videoDataText" style="width: 100%; height: 150px; font-family: monospace; font-size: 11px;"></textarea>
+            <button class="upload-btn" onclick="copyToClipboard()">📋 复制到剪贴板</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        // 拖拽上传
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('video/')) {
+                showStatus('请选择视频文件', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            showStatus(`文件选择成功: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`, 'success');
+            
+            // 显示视频预览
+            const videoPreview = document.getElementById('videoPreview');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const videoInfo = document.getElementById('videoInfo');
+            
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            videoPreview.style.display = 'block';
+            
+            videoPlayer.addEventListener('loadedmetadata', () => {
+                videoInfo.innerHTML = `
+                    <strong>视频信息：</strong><br>
+                    文件名: ${file.name}<br>
+                    大小: ${(file.size / 1024 / 1024).toFixed(2)}MB<br>
+                    时长: ${videoPlayer.duration.toFixed(1)}秒<br>
+                    尺寸: ${videoPlayer.videoWidth}x${videoPlayer.videoHeight}<br>
+                    格式: ${file.type}
+                `;
+                
+                // 开始处理视频
+                processVideo();
+            });
+        }
+
+        async function processVideo() {
+            if (!selectedFile) return;
+
+            showStatus('正在处理视频...', 'info');
+            showDebug('开始处理视频文件');
+
+            try {
+                const videoPlayer = document.getElementById('videoPlayer');
+                
+                // 等待视频加载完成
+                await new Promise(resolve => {
+                    if (videoPlayer.readyState >= 2) {
+                        resolve();
+                    } else {
+                        videoPlayer.addEventListener('loadeddata', resolve, { once: true });
+                    }
+                });
+
+                showDebug(`视频加载完成: ${videoPlayer.duration}秒, ${videoPlayer.videoWidth}x${videoPlayer.videoHeight}`);
+
+                // 提取关键帧（3个时间点）
+                const frames = [];
+                const timePoints = [
+                    videoPlayer.duration * 0.2,
+                    videoPlayer.duration * 0.5,
+                    videoPlayer.duration * 0.8
+                ];
+
+                for (let i = 0; i < timePoints.length; i++) {
+                    const timePoint = timePoints[i];
+                    showDebug(`提取第${i + 1}帧: ${timePoint.toFixed(1)}秒`);
+                    
+                    // 跳转到指定时间
+                    videoPlayer.currentTime = timePoint;
+                    
+                    // 等待跳转完成
+                    await new Promise(resolve => {
+                        videoPlayer.onseeked = resolve;
+                        setTimeout(resolve, 1000); // 超时保护
+                    });
+
+                    // 提取帧
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = Math.min(videoPlayer.videoWidth, 640); // 限制宽度
+                    canvas.height = Math.min(videoPlayer.videoHeight, 480); // 限制高度
+                    
+                    ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
+                    const base64 = canvas.toDataURL('image/jpeg', 0.7); // 降低质量减少大小
+                    
+                    frames.push({
+                        timePoint: timePoint,
+                        base64: base64,
+                        size: Math.round(base64.length / 1024) // KB
+                    });
+
+                    showDebug(`第${i + 1}帧提取完成: ${Math.round(base64.length / 1024)}KB`);
+                }
+
+                // 生成调试数据包
+                const debugData = {
+                    videoInfo: {
+                        name: selectedFile.name,
+                        size: selectedFile.size,
+                        type: selectedFile.type,
+                        duration: videoPlayer.duration,
+                        width: videoPlayer.videoWidth,
+                        height: videoPlayer.videoHeight
+                    },
+                    frames: frames,
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent
+                };
+
+                showDebug('生成调试数据包完成');
+                showVideoData(debugData);
+                showStatus('✅ 视频处理完成！请复制下方数据发送给开发者', 'success');
+
+            } catch (error) {
+                showDebug(`错误: ${error.message}`);
+                showStatus(`处理失败: ${error.message}`, 'error');
+            }
+        }
+
+        function showVideoData(data) {
+            const outputDiv = document.getElementById('videoDataOutput');
+            const textArea = document.getElementById('videoDataText');
+            
+            // 压缩数据（移除base64前缀，只保留数据部分）
+            const compressedData = {
+                ...data,
+                frames: data.frames.map(frame => ({
+                    timePoint: frame.timePoint,
+                    base64: frame.base64.split(',')[1], // 移除 "data:image/jpeg;base64," 前缀
+                    size: frame.size
+                }))
+            };
+            
+            textArea.value = JSON.stringify(compressedData, null, 2);
+            outputDiv.style.display = 'block';
+        }
+
+        function copyToClipboard() {
+            const textArea = document.getElementById('videoDataText');
+            textArea.select();
+            textArea.setSelectionRange(0, 99999); // 移动端兼容
+            
+            try {
+                document.execCommand('copy');
+                showStatus('📋 数据已复制到剪贴板！', 'success');
+            } catch (err) {
+                showStatus('复制失败，请手动选择文本复制', 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            // 移除现有状态
+            const existingStatus = document.querySelector('.status');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+            
+            // 添加新状态
+            const status = document.createElement('div');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            
+            document.querySelector('.container').appendChild(status);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                if (status.parentNode) {
+                    status.remove();
+                }
+            }, 3000);
+        }
+
+        function showDebug(message) {
+            const debugOutput = document.getElementById('debugOutput');
+            const debugContent = document.getElementById('debugContent');
+            
+            debugOutput.style.display = 'block';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            debugContent.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugContent.scrollTop = debugContent.scrollHeight;
+        }
+
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            showStatus('系统已准备就绪，请上传你的冲浪视频', 'info');
+        });
+    </script>
+</body>
+</html>

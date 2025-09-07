@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI原生标注 - 冲浪教练</title>
+    <link rel="stylesheet" href="surfing-analyzer.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .video-container {
+            position: relative;
+            max-width: 100%;
+            margin: 20px 0;
+        }
+        
+        .analysis-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .ai-annotation {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            border-left: 4px solid #ff4444;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+        
+        .ai-annotation.positive {
+            border-left-color: #44ff44;
+        }
+        
+        .ai-annotation.warning {
+            border-left-color: #ffaa00;
+        }
+        
+        .ai-annotation.critical {
+            border-left-color: #ff4444;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+        
+        .analysis-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .log-entry.info { background: #d1ecf1; color: #0c5460; }
+        .log-entry.success { background: #d4edda; color: #155724; }
+        .log-entry.error { background: #f8d7da; color: #721c24; }
+        .log-entry.warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <h1>AI原生标注 - 冲浪教练</h1>
+            </div>
+            <p class="subtitle">让AI直接在视频上进行智能标注，抛弃复杂的坐标系统</p>
+        </header>
+
+        <main class="main-content">
+            <!-- API配置 -->
+            <div class="test-section">
+                <h3><i class="fas fa-key"></i> API配置</h3>
+                <div style="margin-bottom: 15px;">
+                    <label for="apiKeyInput">Gemini API Key:</label>
+                    <input type="password" id="apiKeyInput" 
+                           value="AIzaSyAMmui41ISIe88sqFmM4D9b2bG9vmBlqo4"
+                           style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+                <button class="test-button" onclick="testApiConnection()">测试连接</button>
+                <div id="apiStatus" style="margin-top: 10px; font-weight: bold;"></div>
+            </div>
+
+            <!-- 视频上传 -->
+            <div class="test-section">
+                <h3><i class="fas fa-video"></i> 视频上传</h3>
+                <input type="file" id="videoInput" accept="video/*" style="margin-bottom: 15px;">
+                <div id="videoInfo" style="color: #666; margin-bottom: 15px;"></div>
+                
+                <div class="video-container" id="videoContainer" style="display: none;">
+                    <video id="videoPlayer" controls style="width: 100%; border-radius: 10px;"></video>
+                    <div class="analysis-overlay" id="analysisOverlay"></div>
+                </div>
+                
+                <div style="text-align: center; margin: 15px 0;">
+                    <button class="test-button" onclick="analyzeWithAI()">🤖 让AI直接标注</button>
+                    <button class="test-button" onclick="clearAnnotations()" style="background: #6c757d;">清除标注</button>
+                </div>
+            </div>
+
+            <!-- AI分析日志 -->
+            <div class="test-section">
+                <h3><i class="fas fa-terminal"></i> AI分析过程</h3>
+                <div class="analysis-panel" id="analysisPanel">
+                    <div class="log-entry info">等待AI分析...</div>
+                </div>
+                <button class="test-button" onclick="clearLog()" style="background: #6c757d;">清除日志</button>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 AI原生标注系统</p>
+        </footer>
+    </div>
+
+    <script>
+        let apiKey = 'AIzaSyAMmui41ISIe88sqFmM4D9b2bG9vmBlqo4';
+        let videoElement = null;
+        let analysisOverlay = null;
+
+        // 日志系统
+        function log(message, type = 'info') {
+            const panel = document.getElementById('analysisPanel');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            panel.appendChild(entry);
+            panel.scrollTop = panel.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('analysisPanel').innerHTML = '<div class="log-entry info">日志已清除</div>';
+        }
+
+        // API连接测试
+        async function testApiConnection() {
+            apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                log('请输入API Key', 'error');
+                return;
+            }
+
+            log('测试API连接...', 'info');
+            
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: '测试连接' }] }]
+                    })
+                });
+
+                if (response.ok) {
+                    log('✅ API连接成功！', 'success');
+                    document.getElementById('apiStatus').innerHTML = '<span style="color: #28a745;">✅ API连接正常</span>';
+                } else {
+                    log(`❌ API连接失败: ${response.status}`, 'error');
+                    document.getElementById('apiStatus').innerHTML = '<span style="color: #dc3545;">❌ API连接失败</span>';
+                }
+            } catch (error) {
+                log(`❌ 连接错误: ${error.message}`, 'error');
+                document.getElementById('apiStatus').innerHTML = '<span style="color: #dc3545;">❌ 网络错误</span>';
+            }
+        }
+
+        // 视频处理
+        document.getElementById('videoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            log(`选择视频: ${file.name}`, 'info');
+            
+            if (!file.type.startsWith('video/')) {
+                log('请选择视频文件', 'error');
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            videoElement = document.getElementById('videoPlayer');
+            analysisOverlay = document.getElementById('analysisOverlay');
+            
+            videoElement.src = url;
+            videoElement.load();
+            
+            document.getElementById('videoContainer').style.display = 'block';
+            
+            videoElement.addEventListener('loadedmetadata', () => {
+                log(`视频加载完成: ${videoElement.videoWidth}x${videoElement.videoHeight}, 时长: ${videoElement.duration.toFixed(1)}秒`, 'success');
+                document.getElementById('videoInfo').textContent = 
+                    `视频尺寸: ${videoElement.videoWidth}x${videoElement.videoHeight}, 时长: ${videoElement.duration.toFixed(1)}秒`;
+            });
+        });
+
+        // AI分析函数 - 完全重新设计
+        async function analyzeWithAI() {
+            if (!videoElement || !videoElement.src) {
+                log('请先上传视频', 'error');
+                return;
+            }
+
+            if (!apiKey) {
+                log('请先设置API Key', 'error');
+                return;
+            }
+
+            log('🤖 开始AI分析...', 'info');
+            clearAnnotations();
+
+            try {
+                // 暂停视频，分析当前帧
+                videoElement.pause();
+                const currentTime = videoElement.currentTime;
+                
+                log(`分析时间点: ${currentTime.toFixed(1)}秒`, 'info');
+                
+                // 将当前帧转换为图像
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                ctx.drawImage(videoElement, 0, 0);
+                const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                
+                log('视频帧提取完成', 'success');
+                
+                // 新的AI提示词 - 让AI自由描述和建议
+                const prompt = `你是一位专业的冲浪教练。请分析这张冲浪图片，并给出专业的指导建议。
+
+请用自然语言描述你看到的问题和建议，我会根据你的描述在视频上添加标注。
+
+分析要点：
+1. 冲浪者的姿态和技术问题
+2. 时机把握和浪况判断  
+3. 具体的改进建议
+
+请用简洁明了的中文回复，重点突出需要改进的地方。`;
+
+                log('发送AI分析请求...', 'info');
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inline_data: {
+                                        mime_type: "image/jpeg",
+                                        data: base64Image
+                                    }
+                                }
+                            ]
+                        }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            maxOutputTokens: 500
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API错误: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiAnalysis = data.candidates[0].content.parts[0].text;
+                
+                log('✅ AI分析完成！', 'success');
+                log(`AI分析结果: ${aiAnalysis}`, 'info');
+                
+                // 根据AI的分析结果创建标注
+                createAnnotationsFromAI(aiAnalysis);
+                
+            } catch (error) {
+                log(`❌ AI分析失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 根据AI分析创建标注
+        function createAnnotationsFromAI(analysis) {
+            // 清除现有标注
+            analysisOverlay.innerHTML = '';
+            
+            // 解析AI的分析，创建相应的标注
+            const suggestions = extractSuggestions(analysis);
+            
+            suggestions.forEach((suggestion, index) => {
+                createAnnotation(suggestion, index);
+            });
+            
+            log(`创建了 ${suggestions.length} 个标注`, 'success');
+        }
+
+        // 从AI分析中提取建议
+        function extractSuggestions(analysis) {
+            const suggestions = [];
+            
+            // 移除假数据生成逻辑 - 应该直接使用AI的完整分析结果
+            // 不再基于关键词匹配生成假标注
+            
+            // 完全移除假数据生成逻辑
+            
+            return suggestions;
+        }
+
+        // 提取关键短语
+        function extractKeyPhrase(text, keywords) {
+            for (const keyword of keywords) {
+                const index = text.indexOf(keyword);
+                if (index !== -1) {
+                    // 提取包含关键词的句子
+                    const start = Math.max(0, index - 10);
+                    const end = Math.min(text.length, index + 30);
+                    return text.substring(start, end).trim();
+                }
+            }
+            return text.substring(0, 30) + '...';
+        }
+
+        // 创建单个标注
+        function createAnnotation(suggestion, index) {
+            const annotation = document.createElement('div');
+            annotation.className = `ai-annotation ${suggestion.type}`;
+            annotation.textContent = suggestion.text;
+            
+            // 根据建议类型确定位置
+            let left, top;
+            switch (suggestion.position) {
+                case 'surfer':
+                    left = 45; // 冲浪者通常在中央
+                    top = 35;
+                    break;
+                case 'wave':
+                    left = 70; // 海浪在前方
+                    top = 50;
+                    break;
+                case 'technique':
+                    left = 25; // 技术提示放在侧边
+                    top = 60;
+                    break;
+                default:
+                    left = 10; // 通用建议放在角落
+                    top = 10 + (index * 60);
+            }
+            
+            annotation.style.left = left + '%';
+            annotation.style.top = top + '%';
+            
+            analysisOverlay.appendChild(annotation);
+        }
+
+        // 清除标注
+        function clearAnnotations() {
+            if (analysisOverlay) {
+                analysisOverlay.innerHTML = '';
+                log('标注已清除', 'info');
+            }
+        }
+
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 AI原生标注系统已加载', 'success');
+            log('上传视频后点击"让AI直接标注"开始分析', 'info');
+        });
+    </script>
+</body>
+</html>

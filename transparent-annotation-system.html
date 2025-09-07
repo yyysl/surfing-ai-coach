@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>透明标注分析系统</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .video-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        
+        .video-player {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .annotation-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            border-radius: 10px;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+        
+        .api-key-input {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        
+        .video-upload {
+            border: 3px dashed #4285f4;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            background: #f8f9ff;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .progress {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #4285f4, #34a853);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .current-analysis {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        
+        .analysis-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .annotation-controls {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .opacity-control {
+            margin: 10px 0;
+        }
+        
+        .opacity-slider {
+            width: 200px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ 透明标注分析系统</h1>
+            <p>透明背景 + 清晰标注，不遮挡视频内容</p>
+        </div>
+
+        <div class="controls">
+            <input type="password" id="apiKey" class="api-key-input" placeholder="输入 Gemini API Key">
+            <br>
+            <div class="video-upload" id="uploadArea">
+                <h3>📹 上传冲浪视频</h3>
+                <p>拖拽视频文件到这里，或点击选择文件</p>
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    选择视频文件
+                </button>
+                <input type="file" id="fileInput" accept="video/*" style="display: none;">
+            </div>
+        </div>
+
+        <div id="videoSection" style="display: none;">
+            <div class="video-container" id="videoContainer">
+                <video id="videoPlayer" class="video-player" controls>
+                    您的浏览器不支持视频播放。
+                </video>
+                <canvas id="annotationCanvas" class="annotation-canvas"></canvas>
+            </div>
+            
+            <div class="annotation-controls">
+                <h4>🎨 标注控制</h4>
+                <div class="opacity-control">
+                    <label>文字背景透明度: </label>
+                    <input type="range" id="opacitySlider" class="opacity-slider" min="0" max="100" value="30" 
+                           onchange="updateOpacity(this.value)">
+                    <span id="opacityValue">30%</span>
+                </div>
+                <label>
+                    <input type="checkbox" id="showShadow" checked onchange="toggleShadow()"> 文字阴影效果
+                </label>
+            </div>
+            
+            <div class="controls">
+                <button class="upload-btn" onclick="extractAndAnalyze()">🤖 提取帧并分析</button>
+                <button class="upload-btn" onclick="toggleAnnotations()">👁️ 切换标注显示</button>
+            </div>
+        </div>
+
+        <div id="progressContainer" style="display: none;">
+            <div class="progress">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+        </div>
+
+        <div id="currentAnalysis" class="current-analysis" style="display: none;">
+            <h4>🔍 当前时间点分析</h4>
+            <div id="currentAnalysisText"></div>
+        </div>
+
+        <div id="analysisPanel" class="analysis-panel" style="display: none;">
+            <h4>📊 完整分析结果</h4>
+            <div id="analysisContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentVideo = null;
+        let analysisResults = [];
+        let annotationsVisible = true;
+        let videoCanvas = null;
+        let canvasContext = null;
+        let textOpacity = 0.3;
+        let showShadow = true;
+
+        // 文件上传处理
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleVideoFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleVideoFile(e.target.files[0]);
+            }
+        });
+
+        // 处理视频文件
+        function handleVideoFile(file) {
+            if (!file.type.startsWith('video/')) {
+                alert('请选择视频文件');
+                return;
+            }
+
+            currentVideo = file;
+            const videoPlayer = document.getElementById('videoPlayer');
+            const videoSection = document.getElementById('videoSection');
+            
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            videoSection.style.display = 'block';
+            
+            videoPlayer.addEventListener('loadedmetadata', setupCanvas);
+            videoPlayer.addEventListener('timeupdate', updateAnnotations);
+            
+            console.log('视频文件加载:', file.name, file.size, 'bytes');
+        }
+
+        // 设置Canvas
+        function setupCanvas() {
+            const videoPlayer = document.getElementById('videoPlayer');
+            const canvas = document.getElementById('annotationCanvas');
+            
+            canvas.width = videoPlayer.videoWidth;
+            canvas.height = videoPlayer.videoHeight;
+            canvas.style.width = videoPlayer.offsetWidth + 'px';
+            canvas.style.height = videoPlayer.offsetHeight + 'px';
+            
+            canvasContext = canvas.getContext('2d');
+            videoCanvas = canvas;
+        }
+
+        // 更新透明度
+        function updateOpacity(value) {
+            textOpacity = value / 100;
+            document.getElementById('opacityValue').textContent = value + '%';
+        }
+
+        // 切换阴影效果
+        function toggleShadow() {
+            showShadow = document.getElementById('showShadow').checked;
+        }
+
+        // 提取帧并分析
+        async function extractAndAnalyze() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert('请输入 Gemini API Key');
+                return;
+            }
+
+            if (!currentVideo) {
+                alert('请先上传视频');
+                return;
+            }
+
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            
+            progressContainer.style.display = 'block';
+            analysisResults = [];
+
+            try {
+                const videoPlayer = document.getElementById('videoPlayer');
+                const duration = videoPlayer.duration;
+                const frameCount = 3;
+
+                for (let i = 0; i < frameCount; i++) {
+                    const timePoint = (duration / (frameCount + 1)) * (i + 1);
+                    const progress = ((i + 1) / frameCount) * 100;
+                    
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.textContent = `分析第${i + 1}帧 (${Math.round(progress)}%)`;
+                    
+                    const frameData = await extractFrameAtTime(videoPlayer, timePoint);
+                    const analysis = await analyzeFrameClean(frameData, apiKey);
+                    
+                    analysisResults.push({
+                        timePoint: timePoint,
+                        analysis: analysis.text,
+                        annotations: analysis.annotations,
+                        frameData: frameData
+                    });
+                    
+                    if (i < frameCount - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    }
+                }
+
+                displayAnalysisResults();
+                progressContainer.style.display = 'none';
+
+            } catch (error) {
+                console.error('分析失败:', error);
+                alert('分析失败: ' + error.message);
+                progressContainer.style.display = 'none';
+            }
+        }
+
+        // 在指定时间提取帧
+        async function extractFrameAtTime(videoElement, timePoint) {
+            return new Promise((resolve) => {
+                videoElement.currentTime = timePoint;
+                
+                videoElement.onseeked = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    canvas.width = Math.min(videoElement.videoWidth, 640);
+                    canvas.height = Math.min(videoElement.videoHeight, 360);
+                    
+                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                    
+                    const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                    const base64Data = base64.split(',')[1];
+                    
+                    resolve({
+                        timePoint: timePoint,
+                        base64: base64Data,
+                        width: canvas.width,
+                        height: canvas.height
+                    });
+                };
+            });
+        }
+
+        // 简洁分析（只生成3个主要标注点）
+        async function analyzeFrameClean(frameData, apiKey) {
+            const prompt = `你是专业冲浪教练，分析这个冲浪视频帧（${frameData.timePoint.toFixed(2)}秒）。
+
+请提供：
+1. 详细分析文字
+2. 仅3个最重要的标注点（避免杂乱）
+
+标注规则：
+- 冲浪者姿态：一个箭头指向冲浪者，一句话说明你观察到的具体问题
+- 冲浪板位置：一个箭头指向冲浪板，一句话说明你观察到的具体问题  
+- 波浪关系：一个箭头指向波浪，一句话说明你观察到的具体关系问题
+
+JSON格式：
+{
+  "analysis": "详细分析文字",
+  "annotations": [
+    {
+      "x": [AI识别位置],
+      "y": [AI识别位置],
+      "text": "[AI观察到的具体问题，20字内]",
+      "type": "surfer"
+    },
+    {
+      "x": [AI识别位置],
+      "y": [AI识别位置],
+      "text": "[AI观察到的具体问题，20字内]",
+      "type": "board"
+    },
+    {
+      "x": [AI识别位置],
+      "y": [AI识别位置],
+      "text": "[AI观察到的具体问题，20字内]",
+      "type": "wave"
+    }
+  ]
+}
+
+坐标避开冲浪者主体区域（30-60%, 30-60%）。请用中文回答。`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inline_data: {
+                                        mime_type: "image/jpeg",
+                                        data: frameData.base64
+                                    }
+                                }
+                            ]
+                        }],
+                        generationConfig: {
+                            maxOutputTokens: 800,
+                            temperature: 0.7
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                const responseText = data.candidates[0].content.parts[0].text;
+                
+                // 尝试解析JSON响应
+                try {
+                    const cleanText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                    const parsed = JSON.parse(cleanText);
+                    return parsed;
+                } catch (parseError) {
+                    // 如果JSON解析失败，直接抛出错误，不返回假数据
+                    throw new Error('AI返回的不是有效JSON格式: ' + responseText.substring(0, 200) + '...');
+                }
+
+            } catch (error) {
+                throw new Error('分析请求失败: ' + error.message);
+            }
+        }
+
+        // 更新视频标注
+        function updateAnnotations() {
+            if (!annotationsVisible || !canvasContext || analysisResults.length === 0) {
+                return;
+            }
+
+            const videoPlayer = document.getElementById('videoPlayer');
+            const currentTime = videoPlayer.currentTime;
+            const relevantAnalysis = findRelevantAnalysis(currentTime);
+
+            // 清空Canvas
+            canvasContext.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
+
+            if (relevantAnalysis) {
+                drawTransparentAnnotations(relevantAnalysis);
+                updateCurrentAnalysisDisplay(relevantAnalysis);
+            } else {
+                document.getElementById('currentAnalysis').style.display = 'none';
+            }
+        }
+
+        // 绘制透明标注
+        function drawTransparentAnnotations(analysisData) {
+            if (!analysisData.annotations) return;
+
+            const typeColors = {
+                surfer: '#ff5722',    // 橙色 - 冲浪者
+                board: '#2196f3',     // 蓝色 - 冲浪板  
+                wave: '#4caf50'       // 绿色 - 波浪
+            };
+
+            analysisData.annotations.forEach(annotation => {
+                const x = (annotation.x / 100) * videoCanvas.width;
+                const y = (annotation.y / 100) * videoCanvas.height;
+                const color = typeColors[annotation.type] || '#ff5722';
+
+                // 绘制清晰的箭头
+                drawCleanArrow(x, y, color);
+                
+                // 绘制透明文字标注
+                drawTransparentText(x, y, annotation.text, color);
+            });
+        }
+
+        // 绘制清晰箭头
+        function drawCleanArrow(x, y, color) {
+            canvasContext.save();
+            canvasContext.strokeStyle = color;
+            canvasContext.fillStyle = color;
+            canvasContext.lineWidth = 4;
+            canvasContext.lineCap = 'round';
+
+            // 添加阴影效果（如果启用）
+            if (showShadow) {
+                canvasContext.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                canvasContext.shadowBlur = 4;
+                canvasContext.shadowOffsetX = 2;
+                canvasContext.shadowOffsetY = 2;
+            }
+
+            // 箭头主体 - 从边缘指向目标
+            const startX = x < videoCanvas.width / 2 ? x - 60 : x + 60;
+            const startY = y < videoCanvas.height / 2 ? y - 40 : y + 40;
+
+            canvasContext.beginPath();
+            canvasContext.moveTo(startX, startY);
+            canvasContext.lineTo(x, y);
+            canvasContext.stroke();
+
+            // 箭头头部
+            const angle = Math.atan2(y - startY, x - startX);
+            const arrowLength = 15;
+            
+            canvasContext.beginPath();
+            canvasContext.moveTo(x, y);
+            canvasContext.lineTo(
+                x - arrowLength * Math.cos(angle - Math.PI / 6),
+                y - arrowLength * Math.sin(angle - Math.PI / 6)
+            );
+            canvasContext.moveTo(x, y);
+            canvasContext.lineTo(
+                x - arrowLength * Math.cos(angle + Math.PI / 6),
+                y - arrowLength * Math.sin(angle + Math.PI / 6)
+            );
+            canvasContext.stroke();
+
+            canvasContext.restore();
+        }
+
+        // 绘制透明文字
+        function drawTransparentText(x, y, text, color) {
+            canvasContext.save();
+            canvasContext.font = 'bold 16px Arial';
+            
+            // 计算文字位置（避开冲浪者中心区域）
+            const textX = x < videoCanvas.width / 2 ? x - 200 : x + 20;
+            const textY = y < videoCanvas.height / 2 ? y - 20 : y + 30;
+
+            // 计算文字尺寸
+            const metrics = canvasContext.measureText(text);
+            const textWidth = metrics.width;
+            const textHeight = 20;
+            const padding = 10;
+
+            // 绘制透明背景
+            canvasContext.fillStyle = `rgba(255, 255, 255, ${textOpacity})`;
+            canvasContext.fillRect(
+                textX - padding, 
+                textY - textHeight - padding/2, 
+                textWidth + padding * 2, 
+                textHeight + padding
+            );
+
+            // 绘制透明边框
+            canvasContext.strokeStyle = color;
+            canvasContext.lineWidth = 2;
+            canvasContext.globalAlpha = 0.8;
+            canvasContext.strokeRect(
+                textX - padding, 
+                textY - textHeight - padding/2, 
+                textWidth + padding * 2, 
+                textHeight + padding
+            );
+
+            // 添加文字阴影效果（如果启用）
+            if (showShadow) {
+                canvasContext.globalAlpha = 1;
+                canvasContext.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                canvasContext.shadowBlur = 3;
+                canvasContext.shadowOffsetX = 1;
+                canvasContext.shadowOffsetY = 1;
+            }
+
+            // 绘制文字
+            canvasContext.fillStyle = color;
+            canvasContext.globalAlpha = 1;
+            canvasContext.fillText(text, textX, textY);
+
+            canvasContext.restore();
+        }
+
+        // 查找相关分析
+        function findRelevantAnalysis(currentTime) {
+            for (let result of analysisResults) {
+                if (Math.abs(currentTime - result.timePoint) < 2) {
+                    return result;
+                }
+            }
+            return null;
+        }
+
+        // 更新当前分析显示
+        function updateCurrentAnalysisDisplay(analysisData) {
+            const currentAnalysis = document.getElementById('currentAnalysis');
+            const currentAnalysisText = document.getElementById('currentAnalysisText');
+            
+            currentAnalysisText.innerHTML = `
+                <strong>⏱️ ${analysisData.timePoint.toFixed(2)}秒</strong><br>
+                ${analysisData.analysis || '正在分析中...'}
+            `;
+            
+            currentAnalysis.style.display = 'block';
+        }
+
+        // 显示分析结果
+        function displayAnalysisResults() {
+            const analysisPanel = document.getElementById('analysisPanel');
+            const analysisContent = document.getElementById('analysisContent');
+            
+            let content = '';
+            analysisResults.forEach((result, index) => {
+                content += `
+                    <div style="border-left: 4px solid #4285f4; padding: 15px; margin: 10px 0; background: #f8f9ff;">
+                        <strong>⏱️ ${result.timePoint.toFixed(2)}秒</strong><br>
+                        ${result.analysis}<br>
+                        <small>标注点数: ${result.annotations ? result.annotations.length : 0}</small>
+                    </div>
+                `;
+            });
+            
+            analysisContent.innerHTML = content;
+            analysisPanel.style.display = 'block';
+        }
+
+        // 切换标注显示
+        function toggleAnnotations() {
+            annotationsVisible = !annotationsVisible;
+            if (!annotationsVisible) {
+                canvasContext.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
+                document.getElementById('currentAnalysis').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

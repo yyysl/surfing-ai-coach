@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>纯净AI冲浪分析系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 30px;
+            border: 3px dashed #4285f4;
+            border-radius: 15px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #34a853;
+            background: #f0fff4;
+        }
+
+        .upload-section.dragover {
+            border-color: #ea4335;
+            background: #fff5f5;
+        }
+
+        .api-key-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .video-section {
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .video-container {
+            position: relative;
+            display: inline-block;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .video-player {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .annotation-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .pause-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 87, 34, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-section {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4285f4, #34a853);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .analysis-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .current-analysis {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .analysis-results {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .analysis-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4285f4;
+        }
+
+        .time-stamp {
+            font-weight: bold;
+            color: #4285f4;
+            margin-bottom: 10px;
+        }
+
+        .analysis-text {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .annotation-controls {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .slider-control {
+            margin: 10px 0;
+        }
+
+        .slider {
+            width: 200px;
+            margin: 0 10px;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #d33;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #d33;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏄‍♂️ 纯净AI冲浪分析系统</h1>
+            <p>100% AI驱动，零假数据，真实分析</p>
+        </div>
+
+        <div class="api-key-section">
+            <h3>🔑 Gemini API Key</h3>
+            <input type="password" id="apiKey" class="api-key-input" placeholder="请输入您的 Gemini API Key">
+        </div>
+
+        <div class="upload-section" id="uploadArea">
+            <h3>📹 上传冲浪视频</h3>
+            <p>拖拽视频文件到此处，或点击选择文件</p>
+            <button class="btn" onclick="document.getElementById('fileInput').click()">
+                选择视频文件
+            </button>
+            <input type="file" id="fileInput" accept="video/*" style="display: none;">
+        </div>
+
+        <div class="video-section" id="videoSection">
+            <div class="video-container" id="videoContainer">
+                <video id="videoPlayer" class="video-player" controls>
+                    您的浏览器不支持视频播放。
+                </video>
+                <canvas id="annotationCanvas" class="annotation-canvas"></canvas>
+            </div>
+
+            <div class="annotation-controls">
+                <h4>🎨 标注控制</h4>
+                <div class="slider-control">
+                    <label>文字透明度: </label>
+                    <input type="range" id="opacitySlider" class="slider" min="0" max="100" value="70" 
+                           onchange="updateOpacity(this.value)">
+                    <span id="opacityValue">70%</span>
+                </div>
+                <label>
+                    <input type="checkbox" id="showShadow" checked onchange="toggleShadow()"> 文字阴影
+                </label>
+                <br>
+                <label>
+                    <input type="checkbox" id="showAnnotations" checked onchange="toggleAnnotations()"> 显示标注
+                </label>
+            </div>
+
+            <div class="controls">
+                <button class="btn" id="analyzeBtn" onclick="startAIAnalysis()">
+                    🤖 开始AI分析
+                </button>
+            </div>
+        </div>
+
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+            <div id="progressText">准备中...</div>
+        </div>
+
+        <div class="analysis-section" id="analysisSection">
+            <div class="current-analysis" id="currentAnalysis" style="display: none;">
+                <h4>🔍 当前时间点分析</h4>
+                <div id="currentAnalysisText"></div>
+            </div>
+
+            <div class="analysis-results" id="analysisResults">
+                <h4>📊 AI分析结果</h4>
+                <div id="analysisContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentVideo = null;
+        let analysisResults = [];
+        let annotationsVisible = true;
+        let textOpacity = 0.7;
+        let showShadow = true;
+        let canvas = null;
+        let ctx = null;
+        let isPausedForAnnotation = false;
+        let lastPausedTime = 0; // 记录上次暂停的时间点
+
+        // 文件上传处理
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                loadVideo(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                loadVideo(e.target.files[0]);
+            }
+        });
+
+        // 加载视频
+        function loadVideo(file) {
+            if (!file.type.startsWith('video/')) {
+                showError('请选择视频文件');
+                return;
+            }
+
+            currentVideo = file;
+            const videoPlayer = document.getElementById('videoPlayer');
+            const videoSection = document.getElementById('videoSection');
+            
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            videoSection.style.display = 'block';
+            
+            videoPlayer.addEventListener('loadedmetadata', setupCanvas);
+            videoPlayer.addEventListener('timeupdate', updateCurrentAnnotations);
+            videoPlayer.addEventListener('play', () => {
+                // 用户手动播放时重置暂停状态
+                if (isPausedForAnnotation) {
+                    console.log('🔄 用户手动播放，重置暂停状态');
+                    isPausedForAnnotation = false;
+                    hidePauseIndicator();
+                }
+            });
+            
+            // 视频重新加载时重置暂停记录
+            videoPlayer.addEventListener('loadstart', () => {
+                lastPausedTime = 0;
+                isPausedForAnnotation = false;
+                console.log('🔄 视频重新加载，重置暂停记录');
+            });
+            
+            console.log('视频已加载:', file.name);
+        }
+
+        // 设置Canvas
+        function setupCanvas() {
+            const videoPlayer = document.getElementById('videoPlayer');
+            canvas = document.getElementById('annotationCanvas');
+            
+            console.log('🎨 设置Canvas:', { 
+                videoWidth: videoPlayer.videoWidth, 
+                videoHeight: videoPlayer.videoHeight,
+                canvasFound: !!canvas
+            });
+            
+            canvas.width = videoPlayer.videoWidth;
+            canvas.height = videoPlayer.videoHeight;
+            canvas.style.width = videoPlayer.offsetWidth + 'px';
+            canvas.style.height = videoPlayer.offsetHeight + 'px';
+            
+            ctx = canvas.getContext('2d');
+            console.log('✅ Canvas设置完成:', { canvasWidth: canvas.width, canvasHeight: canvas.height, hasCtx: !!ctx });
+        }
+
+        // 更新透明度
+        function updateOpacity(value) {
+            textOpacity = value / 100;
+            document.getElementById('opacityValue').textContent = value + '%';
+        }
+
+        // 切换阴影
+        function toggleShadow() {
+            showShadow = document.getElementById('showShadow').checked;
+        }
+
+        // 切换标注显示
+        function toggleAnnotations() {
+            annotationsVisible = document.getElementById('showAnnotations').checked;
+            if (!annotationsVisible && ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                document.getElementById('currentAnalysis').style.display = 'none';
+            }
+        }
+
+        // 开始AI分析
+        async function startAIAnalysis() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                showError('请输入 Gemini API Key');
+                return;
+            }
+
+            if (!currentVideo) {
+                showError('请先上传视频');
+                return;
+            }
+
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const progressSection = document.getElementById('progressSection');
+            
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '分析中...';
+            progressSection.style.display = 'block';
+            analysisResults = [];
+
+            try {
+                // 第一步：AI智能识别关键时刻
+                updateProgress(20, 'AI正在识别关键时刻...');
+                const keyMoments = await identifyKeyMoments(apiKey);
+                
+                if (!keyMoments || keyMoments.length === 0) {
+                    throw new Error('AI未能识别到关键时刻');
+                }
+
+                // 第二步：分析每个关键时刻
+                for (let i = 0; i < keyMoments.length; i++) {
+                    const progress = 20 + ((i + 1) / keyMoments.length) * 70;
+                    updateProgress(progress, `分析关键时刻 ${i + 1}/${keyMoments.length}: ${keyMoments[i].description}`);
+                    
+                    const analysis = await analyzeKeyMoment(keyMoments[i], apiKey);
+                    analysisResults.push(analysis);
+                    console.log('📊 分析结果已保存:', { timePoint: analysis.timePoint, annotationsCount: analysis.annotations.length });
+                    
+                    // API调用间隔
+                    if (i < keyMoments.length - 1) {
+                        await delay(2000);
+                    }
+                }
+
+                updateProgress(100, '分析完成！');
+                displayResults();
+                
+            } catch (error) {
+                showError('分析失败: ' + error.message);
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🤖 开始AI分析';
+                progressSection.style.display = 'none';
+            }
+        }
+
+        // AI识别关键时刻
+        async function identifyKeyMoments(apiKey) {
+            const videoPlayer = document.getElementById('videoPlayer');
+            const duration = videoPlayer.duration;
+            
+            // 提取预览帧
+            const previewFrames = [];
+            const frameCount = Math.min(8, Math.ceil(duration / 3));
+            
+            for (let i = 0; i < frameCount; i++) {
+                const timePoint = (duration / frameCount) * i;
+                const frameData = await extractFrame(timePoint);
+                previewFrames.push({
+                    time: timePoint,
+                    base64: frameData
+                });
+            }
+
+            const prompt = `你是专业冲浪教练。观察这${frameCount}个视频帧（总时长${duration.toFixed(1)}秒），识别最值得分析的关键时刻。
+
+要求：
+1. 仔细观察每一帧的冲浪动作
+2. 选择2-5个最关键的技术时刻
+3. 避免选择模糊或重复的时间点
+4. 每个时刻必须有明确的分析价值
+
+返回JSON格式：
+{
+  "keyMoments": [
+    {
+      "time": 时间（秒）,
+      "description": "这个时刻的特点描述"
+    }
+  ]
+}
+
+请基于实际观察选择，不要使用固定时间点。`;
+
+            const parts = [{ text: prompt }];
+            previewFrames.forEach(frame => {
+                parts.push({
+                    inline_data: {
+                        mime_type: "image/jpeg",
+                        data: frame.base64
+                    }
+                });
+            });
+
+            const response = await callGeminiAPI(apiKey, parts);
+            return parseGeminiResponse(response).keyMoments;
+        }
+
+        // 分析关键时刻
+        async function analyzeKeyMoment(moment, apiKey) {
+            const frameData = await extractFrame(moment.time);
+            
+            const prompt = `你是专业冲浪教练，仔细分析这个视频帧（${moment.time.toFixed(1)}秒 - ${moment.description}）。
+
+关键要求：
+1. 画面坐标系：左上角(0,0)，右下角(100,100)为百分比坐标
+2. 仔细观察画面，找到冲浪者、冲浪板、关键波浪的实际位置
+3. 只有当你能明确看到并确定位置时，才生成标注
+4. 坐标必须是你实际观察到的位置，不要猜测
+5. 冲浪者通常在画面中央区域(30-70%, 30-70%)，不要标注到画面边缘
+6. 如果看不清楚具体位置，就不要生成标注
+
+分析步骤：
+第一步：观察识别
+- 在画面中找到冲浪者的具体位置
+- 找到冲浪板的具体位置  
+- 识别关键波浪区域的位置
+
+第二步：技术评估
+- 评估你观察到的技术问题
+- 分析姿态和动作的具体问题
+- 思考改进的具体方法
+
+第三步：精确标注
+为你明确观察到的问题创建标注，每个标注要包含：
+1. 具体问题识别
+2. 改进建议
+
+JSON格式：
+{
+  "analysis": "详细分析文字",
+  "annotations": [
+    {
+      "x": 你观察到的实际x百分比位置,
+      "y": 你观察到的实际y百分比位置,
+      "text": "具体问题描述和改进建议",
+      "type": "surfer/board/wave"
+    }
+  ]
+}
+
+标注文字要求：
+- 基于你的观察，描述具体问题
+- 如果可能，提供改进建议
+- 总长度控制在25字以内，简洁实用
+- 只写你真正观察到和想到的内容
+
+重要规则：
+- 坐标必须基于你的真实观察，不要使用任何预设数值
+- 如果看不清楚或不确定，就不要生成那个标注
+- 每个标注基于真实观察，不强制包含建议
+- 最多生成3个最重要的标注`;
+
+            const parts = [
+                { text: prompt },
+                {
+                    inline_data: {
+                        mime_type: "image/jpeg",
+                        data: frameData
+                    }
+                }
+            ];
+
+            const response = await callGeminiAPI(apiKey, parts);
+            
+            // 调试日志：显示AI原始响应
+            console.log('🤖 AI原始响应:', response);
+            console.log('📝 AI响应文本:', response.candidates?.[0]?.content?.parts?.[0]?.text);
+            
+            const result = parseGeminiResponse(response);
+            
+            // 调试日志：显示解析结果
+            console.log('📊 解析后的结果:', result);
+            
+            // 验证和过滤坐标
+            const validAnnotations = validateAnnotations(result.annotations || []);
+            
+            console.log('✅ 验证后的有效标注:', validAnnotations);
+            
+            return {
+                timePoint: moment.time,
+                description: moment.description,
+                analysis: result.analysis,
+                annotations: validAnnotations
+            };
+        }
+
+        // 验证标注坐标
+        function validateAnnotations(annotations) {
+            return annotations.filter(annotation => {
+                // 检查坐标是否为有效数字
+                const x = parseFloat(annotation.x);
+                const y = parseFloat(annotation.y);
+                
+                console.log('验证标注坐标:', {
+                    type: annotation.type,
+                    x: x,
+                    y: y,
+                    text: annotation.text,
+                    original: annotation
+                });
+                
+                if (isNaN(x) || isNaN(y)) {
+                    console.log('❌ 跳过无效坐标:', annotation);
+                    return false;
+                }
+                
+                // 更严格的坐标范围验证
+                // 冲浪者活动的核心区域通常在画面的30%-70%范围内
+                if (x < 20 || x > 80 || y < 20 || y > 80) {
+                    console.log('❌ 跳过边缘坐标 (超出20-80%范围):', { x, y, type: annotation.type });
+                    return false;
+                }
+                
+                // 额外的合理性检查：冲浪者通常不会在画面最上方（天空）或最下方（前景）
+                if (annotation.type === 'surfer' && (y < 30 || y > 70)) {
+                    console.log('❌ 跳过不合理的冲浪者位置:', { x, y });
+                    return false;
+                }
+                
+                // 所有标注都应该在画面中央区域，避免边缘
+                if (x < 25 || x > 75 || y < 25 || y > 75) {
+                    console.log('❌ 跳过边缘标注 (超出25-75%范围):', { x, y, type: annotation.type });
+                    return false;
+                }
+                
+                // 检查是否有有效的文字描述
+                if (!annotation.text || annotation.text.trim().length < 2) {
+                    console.log('❌ 跳过无效文字:', annotation);
+                    return false;
+                }
+                
+                console.log('✅ 通过验证的标注:', { x, y, type: annotation.type, text: annotation.text });
+                return true;
+            });
+        }
+
+        // 提取视频帧
+        async function extractFrame(timePoint) {
+            return new Promise((resolve) => {
+                const videoPlayer = document.getElementById('videoPlayer');
+                videoPlayer.currentTime = timePoint;
+                
+                videoPlayer.onseeked = () => {
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    tempCanvas.width = Math.min(videoPlayer.videoWidth, 800);
+                    tempCanvas.height = Math.min(videoPlayer.videoHeight, 600);
+                    
+                    tempCtx.drawImage(videoPlayer, 0, 0, tempCanvas.width, tempCanvas.height);
+                    
+                    const base64 = tempCanvas.toDataURL('image/jpeg', 0.8);
+                    resolve(base64.split(',')[1]);
+                };
+            });
+        }
+
+        // 调用Gemini API
+        async function callGeminiAPI(apiKey, parts) {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: parts }],
+                    generationConfig: {
+                        maxOutputTokens: 1000,
+                        temperature: 0.7
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API请求失败: ${response.status} - ${errorText}`);
+            }
+
+            return await response.json();
+        }
+
+        // 解析Gemini响应
+        function parseGeminiResponse(data) {
+            if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                throw new Error('API响应格式异常');
+            }
+            
+            const responseText = data.candidates[0].content.parts[0].text;
+            console.log('🔍 尝试解析AI响应文本长度:', responseText.length);
+            
+            try {
+                // 尝试多种JSON提取方法
+                let cleanText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                
+                // 如果找不到完整JSON，尝试提取JSON部分
+                const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    cleanText = jsonMatch[0];
+                    console.log('📝 提取到JSON片段:', cleanText.substring(0, 100) + '...');
+                }
+                
+                const parsed = JSON.parse(cleanText);
+                console.log('✅ JSON解析成功:', parsed);
+                
+                // 优化标注文字，确保简洁易读
+                if (parsed.annotations && Array.isArray(parsed.annotations)) {
+                    console.log('📋 处理', parsed.annotations.length, '个标注');
+                    parsed.annotations = parsed.annotations.map((annotation, index) => {
+                        const originalText = annotation.text || '';
+                        const friendlyText = createFriendlyText(originalText);
+                        
+                        // 调试信息：显示原文和缩写对比
+                        if (originalText !== friendlyText) {
+                            console.log(`文字缩写[${index}]:`, originalText, '->', friendlyText);
+                        }
+                        
+                        return {
+                            ...annotation,
+                            text: friendlyText,
+                            originalText: originalText  // 保存原文
+                        };
+                    });
+                }
+                
+                return parsed;
+            } catch (parseError) {
+                console.log('❌ JSON解析失败:', parseError.message);
+                console.log('📄 原始文本:', responseText.substring(0, 200) + '...');
+                
+                // 如果不是JSON格式，返回纯文字分析，不生成标注
+                return extractInfoFromText(responseText);
+            }
+        }
+
+        // 创建友好的标注文字
+        function createFriendlyText(originalText) {
+            if (!originalText) return '';
+            
+            // 如果已经很短就直接返回
+            if (originalText.length <= 25) return originalText;
+            
+            // 关键词映射 - 将技术术语转换为简洁表达
+            const keywordMap = {
+                '重心': '重心',
+                '平衡': '平衡',
+                '姿态': '姿态',
+                '前倾': '前倾',
+                '后倾': '后倾',
+                '偏高': '过高',
+                '偏低': '过低',
+                '膝盖': '膝盖',
+                '弯曲': '弯曲',
+                '伸直': '伸直',
+                '时机': '时机',
+                '过早': '太早',
+                '过晚': '太晚',
+                '角度': '角度',
+                '位置': '位置',
+                '调整': '调整',
+                '改进': '改进',
+                '保持': '保持',
+                '注意': '注意',
+                '建议': '建议',
+                '需要': '需要',
+                '应该': '应该',
+                '可以': '可以',
+                '冲浪板': '板子',
+                '身体': '身体',
+                '手臂': '手臂',
+                '波浪': '浪',
+                '海浪': '浪',
+                '速度': '速度',
+                '控制': '控制',
+                '稳定': '稳定',
+                '流畅': '流畅',
+                '降低': '降低',
+                '提高': '提高',
+                '练习': '练习',
+                '训练': '训练',
+                '等待': '等',
+                '观察': '看',
+                '转向': '转',
+                '起身': '起身'
+            };
+            
+            let text = originalText;
+            
+            // 移除常见的无用词汇
+            const removeWords = ['的', '了', '着', '在', '与', '和', '或', '但是', '然而', '因此', '所以', '由于', '如果', '当', '时候'];
+            removeWords.forEach(word => {
+                text = text.replace(new RegExp(word, 'g'), '');
+            });
+            
+            // 提取关键动作词
+            const actionKeywords = [];
+            Object.keys(keywordMap).forEach(key => {
+                if (text.includes(key)) {
+                    actionKeywords.push(keywordMap[key]);
+                }
+            });
+            
+            // 智能处理问题+建议格式
+            if (actionKeywords.length > 0) {
+                let result = '';
+                
+                // 优先级排序：重心 > 姿态 > 时机 > 位置
+                const priority = ['重心', '姿态', '时机', '位置', '平衡', '角度'];
+                const sortedKeywords = actionKeywords.sort((a, b) => {
+                    const aIndex = priority.indexOf(a);
+                    const bIndex = priority.indexOf(b);
+                    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+                });
+                
+                // 主要问题词
+                result = sortedKeywords[0] || '';
+                
+                // 智能添加问题描述
+                if (text.includes('过高') || text.includes('偏高')) {
+                    result += '过高';
+                } else if (text.includes('过低') || text.includes('偏低')) {
+                    result += '过低';
+                } else if (text.includes('太早') || text.includes('过早')) {
+                    result += '太早';
+                } else if (text.includes('太晚') || text.includes('过晚')) {
+                    result += '太晚';
+                } else if (text.includes('不稳') || text.includes('不好')) {
+                    result += '不稳';
+                }
+                
+                // 不添加任何预设建议，只保留AI原始内容
+                
+                if (result.length <= 25 && result.length > 2) return result;
+            }
+            
+            // 备用方案：提取句子中的核心部分
+            const sentences = originalText.split(/[。！？.!?]/);
+            if (sentences.length > 0) {
+                const firstSentence = sentences[0].trim();
+                if (firstSentence.length <= 20) return firstSentence;
+                
+                // 智能截取：保持词汇完整性
+                const words = firstSentence.split('');
+                let result = '';
+                for (let i = 0; i < words.length && result.length < 18; i++) {
+                    result += words[i];
+                }
+                return result + '..';
+            }
+            
+            // 最后的备用方案
+            return originalText.substring(0, 18) + '..';
+        }
+
+        // 从纯文字中提取信息（当AI不返回JSON时）
+        function extractInfoFromText(text) {
+            console.log('📄 AI返回纯文字，不生成标注:', text.substring(0, 100) + '...');
+            return {
+                analysis: text,
+                annotations: []  // 绝对不生成任何假标注
+            };
+        }
+
+        // 更新当前标注
+        function updateCurrentAnnotations() {
+            if (!annotationsVisible || !ctx || analysisResults.length === 0) {
+                console.log('❌ 标注更新跳过:', { 
+                    annotationsVisible, 
+                    hasCtx: !!ctx, 
+                    resultsCount: analysisResults.length,
+                    canvasWidth: canvas ? canvas.width : 'no canvas',
+                    canvasHeight: canvas ? canvas.height : 'no canvas'
+                });
+                return;
+            }
+
+            const videoPlayer = document.getElementById('videoPlayer');
+            const currentTime = videoPlayer.currentTime;
+            
+            // 查找当前时间的分析
+            const currentAnalysis = analysisResults.find(result => 
+                Math.abs(currentTime - result.timePoint) < 0.3
+            );
+
+            console.log('🔍 查找标注:', { currentTime, resultsCount: analysisResults.length, found: !!currentAnalysis });
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (currentAnalysis) {
+                console.log('✅ 找到分析结果:', currentAnalysis);
+                drawAnnotations(currentAnalysis);
+                showCurrentAnalysis(currentAnalysis);
+                // 检查是否需要暂停（在绘制完成后）
+                checkAndPauseForAnnotations(currentAnalysis);
+            } else {
+                console.log('❌ 未找到匹配的分析结果');
+                document.getElementById('currentAnalysis').style.display = 'none';
+            }
+        }
+
+        // 检查并暂停视频以显示标注
+        function checkAndPauseForAnnotations(analysisData) {
+            if (!analysisData.annotations || analysisData.annotations.length === 0) return;
+            
+            const videoPlayer = document.getElementById('videoPlayer');
+            if (!videoPlayer) return;
+            
+            const currentTime = videoPlayer.currentTime;
+            
+            // 如果这个时间点已经暂停过，就不再暂停
+            if (Math.abs(currentTime - lastPausedTime) < 0.5) {
+                return;
+            }
+            
+            // 如果当前没有在暂停状态，且有标注要显示，且视频正在播放
+            if (!isPausedForAnnotation && videoPlayer && !videoPlayer.paused) {
+                console.log('🎯 检测到标注，暂停视频2秒');
+                videoPlayer.pause();
+                isPausedForAnnotation = true;
+                lastPausedTime = currentTime; // 记录暂停的时间点
+                
+                // 显示暂停指示器
+                showPauseIndicator();
+                
+                // 2秒后自动恢复播放
+                setTimeout(() => {
+                    if (isPausedForAnnotation && videoPlayer) {
+                        console.log('▶️ 恢复视频播放');
+                        videoPlayer.play();
+                        isPausedForAnnotation = false;
+                        hidePauseIndicator();
+                    }
+                }, 2000);
+            }
+        }
+
+        // 显示暂停指示器
+        function showPauseIndicator() {
+            let indicator = document.getElementById('pauseIndicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'pauseIndicator';
+                indicator.className = 'pause-indicator';
+                indicator.textContent = '⏸️ 标注暂停中...';
+                document.body.appendChild(indicator);
+            }
+            indicator.style.display = 'block';
+        }
+
+        // 隐藏暂停指示器
+        function hidePauseIndicator() {
+            const indicator = document.getElementById('pauseIndicator');
+            if (indicator) {
+                indicator.style.display = 'none';
+            }
+        }
+
+        // 绘制标注
+        function drawAnnotations(analysisData) {
+            if (!analysisData.annotations) {
+                console.log('❌ 没有标注数据');
+                return;
+            }
+
+            console.log('🎨 开始绘制标注:', analysisData.annotations.length, '个标注');
+
+            const colors = {
+                surfer: '#ff5722',
+                board: '#2196f3', 
+                wave: '#4caf50'
+            };
+
+            analysisData.annotations.forEach((annotation, index) => {
+                const x = (annotation.x / 100) * canvas.width;
+                const y = (annotation.y / 100) * canvas.height;
+                const color = colors[annotation.type] || '#ff5722';
+
+                console.log(`🎯 绘制标注 ${index + 1}:`, { x, y, text: annotation.text, type: annotation.type });
+
+                // 绘制箭头
+                drawArrow(x, y, color);
+                
+                // 绘制文字
+                drawText(x, y, annotation.text, color);
+            });
+        }
+
+        // 绘制箭头
+        function drawArrow(x, y, color) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 4;
+
+            if (showShadow) {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+            }
+
+            // 更明显的箭头 - 从上方指向目标
+            const startX = x - 30;
+            const startY = y - 30;
+            
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // 更大的箭头头部
+            const angle = Math.atan2(y - startY, x - startX);
+            const arrowLength = 15;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(
+                x - arrowLength * Math.cos(angle - Math.PI / 7),
+                y - arrowLength * Math.sin(angle - Math.PI / 7)
+            );
+            ctx.moveTo(x, y);
+            ctx.lineTo(
+                x - arrowLength * Math.cos(angle + Math.PI / 7),
+                y - arrowLength * Math.sin(angle + Math.PI / 7)
+            );
+            ctx.stroke();
+
+            // 在箭头尖端画一个小圆点，更明显地标示目标
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 绘制文字
+        function drawText(x, y, text, color) {
+            ctx.save();
+            ctx.font = 'bold 14px Arial';
+            
+            const metrics = ctx.measureText(text);
+            const textWidth = metrics.width;
+            const textHeight = 16;
+            const padding = 8;
+
+            // 智能文字定位 - 避免与箭头重叠，优先放在右侧
+            let textX = x + 40;  // 默认放在目标右侧
+            let textY = y - 10;
+
+            // 边界检查和调整
+            if (textX + textWidth + padding * 2 > canvas.width - 10) {
+                textX = x - textWidth - padding * 2 - 40;  // 放在左侧
+            }
+            if (textX < 10) textX = 10;
+            
+            if (textY < textHeight + padding) textY = textHeight + padding;
+            if (textY > canvas.height - padding) textY = y + 40;
+
+            // 背景
+            ctx.fillStyle = `rgba(255, 255, 255, ${textOpacity})`;
+            ctx.fillRect(textX - padding, textY - textHeight - padding/2, textWidth + padding * 2, textHeight + padding);
+
+            // 边框
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(textX - padding, textY - textHeight - padding/2, textWidth + padding * 2, textHeight + padding);
+
+            // 文字阴影
+            if (showShadow) {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                ctx.shadowBlur = 2;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
+            }
+
+            // 文字
+            ctx.fillStyle = color;
+            ctx.fillText(text, textX, textY);
+
+            ctx.restore();
+        }
+
+        // 显示当前分析
+        function showCurrentAnalysis(analysisData) {
+            const currentAnalysis = document.getElementById('currentAnalysis');
+            const currentAnalysisText = document.getElementById('currentAnalysisText');
+            
+            currentAnalysisText.innerHTML = `
+                <strong>⏱️ ${analysisData.timePoint.toFixed(1)}秒 - ${analysisData.description}</strong><br>
+                ${analysisData.analysis}
+            `;
+            
+            currentAnalysis.style.display = 'block';
+        }
+
+        // 显示结果
+        function displayResults() {
+            const analysisSection = document.getElementById('analysisSection');
+            const analysisContent = document.getElementById('analysisContent');
+            
+            let content = '';
+            analysisResults.forEach(result => {
+                content += `
+                    <div class="analysis-item">
+                        <div class="time-stamp">⏱️ ${result.timePoint.toFixed(1)}秒 - ${result.description}</div>
+                        <div class="analysis-text">${result.analysis}</div>
+                        <small>标注数量: ${result.annotations.length}</small>
+                    </div>
+                `;
+            });
+            
+            analysisContent.innerHTML = content;
+            analysisSection.style.display = 'block';
+        }
+
+        // 更新进度
+        function updateProgress(percent, text) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressFill.style.width = percent + '%';
+            progressFill.textContent = Math.round(percent) + '%';
+            progressText.textContent = text;
+        }
+
+        // 显示错误
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            
+            document.querySelector('.container').appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // 延迟函数
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
